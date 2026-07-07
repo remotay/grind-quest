@@ -14,6 +14,11 @@ GQ.engine = (() => {
     buffs: [],         // {key, icon, buff, amt, t, max}
     autoT: 0,
     achT: 0,
+    clickT: 0,         // manual strike cooldown
+    momentum: 0,       // hands-on damage stacks
+    momentumT: 0,
+    petT: 1.5,         // companion swing timer
+    shinyT: 30,        // next clickable spark
   };
 
   function S() { return GQ.state.S; }
@@ -131,6 +136,26 @@ GQ.engine = (() => {
     const em = eventMods(z.id);
     const gm = zoneMods(z);
     const inTrial = !!combat.trial;
+    // a Loot Goblin: rich, harmless, and already halfway out the door
+    if (!inTrial && S().stats.kills >= D.BAL.goblinMinKills && Math.random() < D.BAL.goblinChance) {
+      const hpMax = D.BAL.monsterHp(z.level) * 1.3 * (gm.hpM || 1);
+      combat.monster = {
+        sp: { name: 'Loot Goblin', shape: 'humanoid', hue: 120, size: 0.85 },
+        goblin: true, fleeT: D.BAL.goblinFlee,
+        name: 'Loot Goblin',
+        hp: hpMax, hpMax,
+        dmg: D.BAL.monsterDmg(z.level) * 0.25,
+        atkInt: 2.5,
+        xp: D.BAL.xpKill(z.level) * 0.5,
+        gold: D.BAL.goldKill(z.level) * 8,
+        zoneLevel: z.level,
+      };
+      combat.matkT = 2;
+      ui().log('💰 <b>A Loot Goblin!</b> Eight seconds. Go.', 'sys');
+      GQ.audio.quest();
+      if (scene()) { scene().onSpawn(combat.monster); scene().addShake(2); }
+      return;
+    }
     const elite = !inTrial && S().stats.kills >= D.BAL.eliteMinKills &&
       Math.random() < Math.min(0.6, D.BAL.eliteChance * (em.elite || 1));
     const hpMax = D.BAL.monsterHp(z.level) * sp.hp * U.rand(0.92, 1.12) *
@@ -183,6 +208,9 @@ GQ.engine = (() => {
     // Wolfpack: every 3rd hit lands harder
     combat.hitCount = (combat.hitCount || 0) + 1;
     if (GQ.state.hasSet('pack') && combat.hitCount % 3 === 0) dmg *= 1.6;
+
+    // Momentum: hands-on play sharpens every hit
+    if (combat.momentum > 0) dmg *= 1 + combat.momentum * D.BAL.momentumDmg;
 
     const isCrit = forceCrit || Math.random() * 100 < d.crit;
     if (isCrit) dmg *= d.critDmg / 100;
@@ -262,6 +290,52 @@ GQ.engine = (() => {
     combat.cds[ab.key] = ab.cd * (GQ.state.hasTalent('overwhelm') ? 0.85 : 1);
     GQ.audio.ability(ab.kind);
     return true;
+  }
+
+  // clicking the monster is a legitimate combat technique
+  function manualStrike() {
+    if (!combat.monster || combat.recover > 0 || combat.clickT > 0) return false;
+    combat.clickT = D.BAL.clickCd;
+    combat.momentum = Math.min(D.BAL.momentumMax, (combat.momentum || 0) + 1);
+    combat.momentumT = D.BAL.momentumDur;
+    S().stats.clicks = (S().stats.clicks || 0) + 1;
+    dealDamage(D.BAL.clickPower, false, true);
+    return true;
+  }
+
+  // the shiny: click it before it stops existing
+  function collectShiny() {
+    const z = zone();
+    const d = drv();
+    S().stats.shinies = (S().stats.shinies || 0) + 1;
+    const roll = Math.random();
+    if (roll < 0.55) {
+      const g = Math.round(D.BAL.goldKill(z.level) * 15 * (1 + d.gold / 100));
+      S().hero.gold += g;
+      S().stats.goldEarned += g;
+      ui().log(`✨ Shiny snatched: <b style="color:var(--gold)">+${U.fmt(g)} gold</b>.`, 'dim');
+    } else if (roll < 0.85) {
+      const n = Math.max(1, Math.round(2 + z.level / 8));
+      S().hero.shards += n;
+      S().stats.shardsEarned += n;
+      ui().log(`✨ Shiny snatched: <b style="color:#bda1ff">+${n} shards</b>.`, 'dim');
+    } else {
+      combat.buffs = combat.buffs.filter(b => b.key !== 'rush');
+      combat.buffs.push({ key: 'rush', icon: '✨', buff: 'dmg', amt: 0.25, t: 10, max: 10 });
+      ui().log('✨ Shiny snatched: <b style="color:var(--gold2)">Rush!</b> +25% damage for 10s.', 'dim');
+    }
+    GQ.audio.coin();
+    ui().markDirty('res');
+  }
+
+  function petStrike() {
+    const m = combat.monster;
+    if (!m) return;
+    const d = drv();
+    let dmg = d.atk * D.BAL.petDps * U.rand(0.85, 1.15) * dmgBuffMult();
+    m.hp -= dmg;
+    if (scene()) scene().onPetHit(dmg);
+    if (m.hp <= 0) killMonster();
   }
 
   // summon a zone's boss once enough kills are banked
@@ -463,6 +537,18 @@ GQ.engine = (() => {
         ui().log(`Found <b style="color:#bda1ff">${n} Arcane Shard${n > 1 ? 's' : ''}</b>.`, 'dim');
         ui().markDirty('res');
       }
+      // a caught goblin empties its pockets
+      if (m.goblin) {
+        dropItem(z, d);
+        dropItem(z, d);
+        const n = Math.round(5 + z.level / 4);
+        S().hero.shards += n;
+        S().stats.shardsEarned += n;
+        S().stats.goblins = (S().stats.goblins || 0) + 1;
+        ui().toast('💰 Loot Goblin caught! Its pockets were deep.', 'gold');
+        ui().log(`<b>💰 Loot Goblin caught:</b> two items and ${n} shards spill out.`, 'level');
+        GQ.audio.drop(3);
+      }
     }
 
     questEvent('kill', 1, { zone: z.id, elite: !!m.elite });
@@ -520,6 +606,20 @@ GQ.engine = (() => {
     } else {
       ui().log(`<b>${D.BOSSES[bz].name}</b> defeated again. It is getting embarrassing for them.`, 'level');
       GQ.audio.conquer();
+    }
+    // a boss sometimes drops a smaller, friendlier version of itself
+    if (D.COMPANIONS[bz] && !S().pets.owned[bz]) {
+      const kills = S().boss.kills[bz] || 0;
+      if (Math.random() < D.BAL.petDropChance || kills >= D.BAL.petPityKills) {
+        S().pets.owned[bz] = true;
+        const pet = D.COMPANIONS[bz];
+        if (!S().pets.active) S().pets.active = bz;
+        GQ.state.recalc();
+        ui().toast(`🐾 <b>${pet.name}</b> joins you! (${pet.perkDesc})`, 'gold', 5.5);
+        ui().log(`<b>🐾 A companion:</b> ${pet.name}, a much smaller ${D.BOSSES[bz].name}, decides you are its problem now. ${pet.perkDesc}.`, 'level');
+        GQ.audio.conquer();
+        ui().markDirty('char', 'records');
+      }
     }
     questEvent('boss', 1, { zone: bz });
     ui().markDirty('char', 'zones', 'records');
@@ -671,6 +771,16 @@ GQ.engine = (() => {
     }
 
     const m = combat.monster;
+    // loot goblins do not stay for the whole conversation
+    if (m.goblin) {
+      m.fleeT -= dt;
+      if (m.fleeT <= 0) {
+        ui().log('💰 The Loot Goblin escapes, jingling contemptuously.', 'dim');
+        combat.monster = null;
+        combat.respawn = D.BAL.respawnTime;
+        return;
+      }
+    }
     // boss enrage: the DPS check
     if (m.bossZone) {
       m.age += dt;
@@ -716,6 +826,28 @@ GQ.engine = (() => {
       combat.buffs[i].t -= dt;
       if (combat.buffs[i].t <= 0) combat.buffs.splice(i, 1);
     }
+    if (combat.clickT > 0) combat.clickT -= dt;
+    if (combat.momentumT > 0) {
+      combat.momentumT -= dt;
+      if (combat.momentumT <= 0) combat.momentum = 0;
+    }
+    // shinies: something on the battlefield begs to be clicked
+    if (scene() && !document.hidden) {
+      combat.shinyT -= dt;
+      if (combat.shinyT <= 0 && !scene().hasShiny()) {
+        scene().spawnShiny();
+        combat.shinyT = U.rand(D.BAL.shinyGapMin, D.BAL.shinyGapMax);
+      }
+    }
+    // the companion earns its keep (but not in trials — medals are yours alone)
+    if (S().pets.active && combat.monster && !combat.trial && combat.recover <= 0) {
+      combat.petT -= dt;
+      if (combat.petT <= 0) {
+        combat.petT = D.BAL.petInterval;
+        petStrike();
+      }
+    }
+    ensureContracts();
     if ((S().asc.up.auto || 0) > 0 && S().settings.autocast) {
       combat.autoT -= dt;
       if (combat.autoT <= 0) {
@@ -868,6 +1000,7 @@ GQ.engine = (() => {
       msg = grantChestItem(GQ.items.generateSetPiece(az.level, d.loot));
     }
     S().stats.anomalies = (S().stats.anomalies || 0) + 1;
+    questEvent('anomaly', 1);
     const host = a.host;
     S().anomaly = null;
     S().anomalyNext = S().stats.time + U.rand(D.BAL.anomalyGapMin, D.BAL.anomalyGapMax);
@@ -1043,6 +1176,7 @@ GQ.engine = (() => {
       if (q.have >= q.need) completeQuest(i);
     }
     if (touched) ui().markDirty('quests');
+    contractEvent(type, n, meta);
   }
 
   function completeQuest(idx) {
@@ -1059,6 +1193,80 @@ GQ.engine = (() => {
     if (!q.chain) S().quests.push(genQuest()); // the chain refills itself via ensureQuests
     ui().markDirty('quests', 'res');
     addXp(q.reward.xp);
+  }
+
+  /* ---------- Bureau Contracts: daily, real-time, ember-paying ---------- */
+
+  function genContracts() {
+    const L = S().hero.level;
+    const pool = [
+      { type: 'kills',   need: 250 + L * 6,                          desc: n => `Slay ${U.fmtInt(n)} monsters` },
+      { type: 'elites',  need: Math.max(8, Math.round(15 + L / 2)),  desc: n => `Defeat ${n} elites` },
+      { type: 'gold',    need: Math.round(D.BAL.goldKill(L) * 1500), desc: n => `Earn ${U.fmt(n)} gold` },
+      { type: 'items',   need: 12,                                   desc: n => `Find ${n} pieces of equipment` },
+      { type: 'boss',    need: L >= 12 ? 3 : 2,                      desc: n => `Defeat ${n} zone bosses` },
+      { type: 'anomaly', need: 1,                                    desc: () => 'Loot an anomaly chest' },
+    ];
+    const picks = [];
+    while (picks.length < 3 && pool.length) {
+      picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    }
+    return picks.map(p => ({
+      id: U.uid(), type: p.type, need: p.need, have: 0, done: false,
+      desc: p.desc(p.need),
+      reward: {
+        gold: Math.round(D.BAL.goldKill(L) * U.rand(350, 500)),
+        shards: Math.round(40 + L),
+        embers: 1,
+      },
+    }));
+  }
+
+  function ensureContracts() {
+    const c = S().contracts;
+    const refreshMs = D.BAL.contractHours * 3600 * 1000;
+    if (!c.stamp || Date.now() - c.stamp > refreshMs) {
+      c.stamp = Date.now();
+      c.list = genContracts();
+      ui().log('<b>🏛️ New Bureau Contracts posted.</b> Three of them. The Bureau believes in you, contractually.', 'sys');
+      ui().markDirty('quests');
+    }
+  }
+
+  function contractEvent(type, n, meta) {
+    const c = S().contracts;
+    if (!c || !c.list || !c.list.length) return;
+    let touched = false;
+    for (const q of c.list) {
+      if (q.done) continue;
+      let inc = 0;
+      if (type === 'kill') {
+        if (q.type === 'kills') inc = n;
+        else if (q.type === 'elites' && meta && meta.elite) inc = n;
+      }
+      else if (type === 'gold' && q.type === 'gold') inc = n;
+      else if (type === 'item' && q.type === 'items') inc = n;
+      else if (type === 'boss' && q.type === 'boss') inc = n;
+      else if (type === 'anomaly' && q.type === 'anomaly') inc = n;
+      if (!inc) continue;
+      q.have = Math.min(q.need, q.have + inc);
+      touched = true;
+      if (q.have >= q.need && !q.done) {
+        q.done = true;
+        S().hero.gold += q.reward.gold;
+        S().hero.shards += q.reward.shards;
+        S().asc.embers += q.reward.embers;
+        S().asc.lifetime += q.reward.embers;
+        S().stats.goldEarned += q.reward.gold;
+        S().stats.shardsEarned += q.reward.shards;
+        S().stats.contracts = (S().stats.contracts || 0) + 1;
+        ui().toast(`🏛️ Contract fulfilled: ${q.desc} (+${q.reward.embers} 🔥)`, 'gold', 5);
+        ui().log(`<b>🏛️ Contract fulfilled:</b> ${q.desc} <span style="color:var(--faint)">(+${U.fmt(q.reward.gold)} gold, +${q.reward.shards} shards, +${q.reward.embers} 🔥)</span>`, 'level');
+        GQ.audio.quest();
+        ui().markDirty('res');
+      }
+    }
+    if (touched) ui().markDirty('quests');
   }
 
   /* ---------- achievements ---------- */
@@ -1254,5 +1462,6 @@ GQ.engine = (() => {
     warDrums, drumsPrice, stormBell, bellPrice,
     startTrial, endTrial, trialZone,
     anomalyZone, zoneOpen,
+    manualStrike, collectShiny, ensureContracts,
   };
 })();

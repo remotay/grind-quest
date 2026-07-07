@@ -24,8 +24,10 @@ GQ.ui = (() => {
      'zone-name', 'zone-flavor', 'zone-danger', 'zone-list', 'inv-grid', 'inv-count',
      'records', 'log', 'tooltip', 'toasts', 'modal-root', 'intro', 'portrait',
      'quest-list', 'hotbar', 'buffbar', 'forge-row', 'btn-ascend', 'btn-talents', 'zone-event',
-     'shop-list',
+     'shop-list', 'btn-pets', 'upnext',
     ].forEach(id => { el[id] = $(id); });
+
+    el['btn-pets'].addEventListener('click', petsModal);
 
     // Griselda's shop
     el['shop-list'].addEventListener('click', e => {
@@ -158,6 +160,8 @@ GQ.ui = (() => {
       updateAscendButton();
       if (activeTab === 'stats') dirty.records = true;
       if (activeTab === 'shop') dirty.shop = true;
+      if (activeTab === 'quests') dirty.quests = true;
+      updateUpNext();
     }
     if (dirty.res) { renderResources(); dirty.res = false; }
     if (dirty.char) { renderChar(); dirty.char = false; }
@@ -194,8 +198,37 @@ GQ.ui = (() => {
       kids[i].classList.toggle('ready', !locked && cd <= 0);
     }
     const buffs = GQ.engine.combat.buffs;
-    const bHtml = buffs.map(b => `<span class="buff">${b.icon} ${Math.ceil(b.t)}s</span>`).join('');
+    let bHtml = buffs.map(b => `<span class="buff">${b.icon} ${Math.ceil(b.t)}s</span>`).join('');
+    const mom = GQ.engine.combat.momentum;
+    if (mom > 0) bHtml = `<span class="buff mom">👊 ×${mom}</span>` + bHtml;
     if (el['buffbar'].innerHTML !== bHtml) el['buffbar'].innerHTML = bHtml;
+  }
+
+  // the anticipation strip: your next three milestones
+  function updateUpNext() {
+    const items = [];
+    const L = S().hero.level;
+    const zid = S().zoneId;
+    if (D.BOSSES[zid]) {
+      const bp = S().boss.progress[zid] || 0;
+      items.push(bp >= D.BAL.bossKillsNeeded
+        ? '☠ boss <b>READY</b>'
+        : `☠ boss in <b>${D.BAL.bossKillsNeeded - bp}</b> kills`);
+    }
+    if (D.ZONE_BY_ID[zid]) {
+      const kills = S().stats.killsByZone[zid] || 0;
+      const next = D.BAL.masteryTiers.find(t => kills < t);
+      if (next) items.push(`✦ mastery in <b>${U.fmtInt(next - kills)}</b> kills`);
+    }
+    const nextTier = D.TALENT_TIERS.find((t, ti) => L < t.lvl);
+    if (nextTier) items.push(`🎯 talent at <b>Lv ${nextTier.lvl}</b>`);
+    if (L < 40) items.push('🔱 ultimate at <b>Lv 40</b>');
+    if (!GQ.engine.depthsUnlocked() && L >= 45) items.push('🌌 the Beyond: <b>fell the Unraveled King</b>');
+    const uni = D.UNIQUES[zid];
+    if (uni && !S().stats.uniquesFound[uni.key]) items.push(`✧ <b>${uni.name}</b> hides here`);
+    el['upnext'].innerHTML = items.length
+      ? 'Up next: ' + items.slice(0, 3).join(' · ')
+      : '';
   }
 
   function updateForgeCosts() {
@@ -246,6 +279,10 @@ GQ.ui = (() => {
     const pts = GQ.state.talentPointsAvailable();
     el['btn-talents'].innerHTML = pts > 0 ? `🎯 Talents — ${pts} point${pts > 1 ? 's' : ''}!` : '🎯 Talents';
     el['btn-talents'].classList.toggle('pulse', pts > 0);
+    const pk = S().pets.active;
+    el['btn-pets'].innerHTML = pk && D.COMPANIONS[pk]
+      ? `🐾 ${D.COMPANIONS[pk].name} <span style="color:var(--faint);font-size:10.5px">(${D.COMPANIONS[pk].perkDesc})</span>`
+      : `🐾 Companion <span style="color:var(--faint);font-size:10.5px">(${Object.keys(S().pets.owned).length}/${Object.keys(D.COMPANIONS).length})</span>`;
     GQ.scene.drawPortrait(el['portrait']);
 
     // paperdoll
@@ -861,11 +898,27 @@ GQ.ui = (() => {
 
   function renderQuests() {
     const qs = S().quests;
+    // Bureau Contracts: the daily board, paid in embers
+    const c = S().contracts;
+    let html = '';
+    if (c && c.list && c.list.length) {
+      const msLeft = Math.max(0, (c.stamp + D.BAL.contractHours * 3600 * 1000) - Date.now());
+      html += `<div class="con-head">🏛️ Bureau Contracts <span>new postings in ${U.fmtTime(msLeft / 1000)}</span></div>`;
+      html += c.list.map(q => {
+        const pct = Math.min(100, (q.have / q.need) * 100);
+        return `<div class="qcard contract ${q.done ? 'done' : ''}">
+          <div class="q-desc">${q.done ? '✅' : '🏛️'} ${q.desc}</div>
+          <div class="q-bar"><div class="q-fill" style="width:${pct.toFixed(1)}%"></div><span class="q-txt">${U.fmtInt(q.have)} / ${U.fmtInt(q.need)}</span></div>
+          <div class="q-reward">${q.done ? 'Paid' : 'Pays'}: <b style="color:var(--gold)">${U.fmt(q.reward.gold)}</b> gold · <b style="color:#bda1ff">${q.reward.shards}</b> shards · <b style="color:#ff9a5a">${q.reward.embers} 🔥</b></div>
+        </div>`;
+      }).join('');
+      html += `<div class="con-head" style="margin-top:14px">📜 Quests</div>`;
+    }
     if (!qs.length) {
-      el['quest-list'].innerHTML = '<div class="inv-empty-msg">The quest board is being restocked…</div>';
+      el['quest-list'].innerHTML = html + '<div class="inv-empty-msg">The quest board is being restocked…</div>';
       return;
     }
-    el['quest-list'].innerHTML = qs.map(q => {
+    el['quest-list'].innerHTML = html + qs.map(q => {
       const pct = Math.min(100, (q.have / q.need) * 100);
       return `<div class="qcard">
         <div class="q-desc">📜 ${q.desc}</div>
@@ -1006,6 +1059,48 @@ GQ.ui = (() => {
       });
   }
 
+  function petsModal() {
+    const owned = S().pets.owned;
+    const active = S().pets.active;
+    const rows = Object.entries(D.COMPANIONS).map(([key, pet]) => {
+      const have = !!owned[key];
+      const isActive = active === key;
+      if (!have) {
+        return `<div class="pet-row locked-pet">
+          <span class="pet-ic">❓</span>
+          <div class="pet-body"><div class="pet-name">???</div>
+          <div class="pet-desc">Follows ${D.BOSSES[key].name}. Sometimes.</div></div>
+        </div>`;
+      }
+      return `<div class="pet-row">
+        <span class="pet-ic">🐾</span>
+        <div class="pet-body">
+          <div class="pet-name">${pet.name} <span class="zc-m-txt">from ${D.BOSSES[key].name}</span></div>
+          <div class="pet-desc">${pet.perkDesc} · fights at your side</div>
+        </div>
+        <button class="btn small ${isActive ? '' : 'gold'}" data-pet="${key}">${isActive ? 'Rest' : 'Summon'}</button>
+      </div>`;
+    }).join('');
+    const m = openModal(`
+      <h3>🐾 Companions <span style="color:var(--faint);font-size:12px">${Object.keys(owned).length}/${Object.keys(D.COMPANIONS).length}</span></h3>
+      <p style="color:var(--dim);font-size:12.5px">Bosses sometimes drop a smaller, friendlier version of themselves (guaranteed by the fifth conquest). One follows you at a time: its perk applies and it swings for 15% of your attack.</p>
+      ${rows}
+      <div class="btnrow"><button class="btn gold" id="pets-close">Done</button></div>`);
+    m.querySelectorAll('[data-pet]').forEach(btn => {
+      btn.onclick = () => {
+        const key = btn.dataset.pet;
+        S().pets.active = (S().pets.active === key) ? null : key;
+        GQ.state.recalc();
+        GQ.state.save();
+        GQ.audio.click();
+        markDirty('char');
+        closeModal();
+        petsModal();
+      };
+    });
+    m.querySelector('#pets-close').onclick = closeModal;
+  }
+
   function trialResults(def, kills, prevBest, rewards) {
     const medalNames = ['Bronze', 'Silver', 'Gold'];
     const tierNow = def.medals.filter(m => kills >= m).length;
@@ -1127,6 +1222,11 @@ GQ.ui = (() => {
       <div class="stat-row"><span class="sname">Mastery tiers</span><span class="sval">${GQ.state.masteryTierTotal()} / ${D.ZONES.length * D.BAL.masteryTiers.length}</span></div>
       <div class="stat-row"><span class="sname">Bosses conquered</span><span class="sval">${GQ.state.conqueredCount()} / ${Object.keys(D.BOSSES).length}</span></div>
       <div class="stat-row"><span class="sname">Anomalies looted</span><span class="sval">${U.fmtInt(st.anomalies || 0)}</span></div>
+      <div class="stat-row"><span class="sname">Loot Goblins caught</span><span class="sval">${U.fmtInt(st.goblins || 0)}</span></div>
+      <div class="stat-row"><span class="sname">Shinies snatched</span><span class="sval">${U.fmtInt(st.shinies || 0)}</span></div>
+      <div class="stat-row"><span class="sname">Manual strikes</span><span class="sval">${U.fmtInt(st.clicks || 0)}</span></div>
+      <div class="stat-row"><span class="sname">Contracts fulfilled</span><span class="sval">${U.fmtInt(st.contracts || 0)}</span></div>
+      <div class="stat-row"><span class="sname">Companions</span><span class="sval">${Object.keys(S().pets.owned).length} / ${Object.keys(D.COMPANIONS).length}</span></div>
       <div class="stat-row"><span class="sname">Ascensions</span><span class="sval" style="color:#ff9a5a">${S().asc.count}</span></div>
       ${S().depth.best > 0 ? `<div class="stat-row"><span class="sname">Deepest floor</span><span class="sval" style="color:var(--r5)">Depth ${S().depth.best}</span></div>` : ''}
       ${zoneRows ? '<h4>Kills by zone</h4>' + zoneRows : ''}

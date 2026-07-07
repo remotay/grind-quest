@@ -46,6 +46,7 @@ GQ.state = (() => {
         pity: 20,            // kills since last drop; starts high so the first drop lands early
         uniquesFound: {},
         eliteKills: 0, bestEnhance: 0, forged: 0, tempered: 0, anomalies: 0,
+        goblins: 0, shinies: 0, clicks: 0, contracts: 0,
         achDone: {},
         bestiaryPaid: {},    // species -> highest tier already rewarded
       },
@@ -69,6 +70,8 @@ GQ.state = (() => {
         bag: 0, charter: 0, horseshoe: 0, whetstone: 0, boar: 0, insurance: 0,
       },
       trials: {},            // trialKey -> best kill count (account record)
+      pets: { owned: {}, active: null },     // companions persist ascension
+      contracts: { stamp: 0, list: [] },     // daily Bureau Contracts (real time)
     };
   }
 
@@ -127,6 +130,12 @@ GQ.state = (() => {
       crit += md.crit || 0; critDmg += md.critDmg || 0; haste += md.haste || 0;
       regenPct += md.regen || 0; gold += md.gold || 0; xp += md.xp || 0; loot += md.loot || 0;
     }
+    const applyMods = md => {
+      tDmg += md.dmg || 0; tHp += md.hp || 0; tArmorPct += md.armor || 0;
+      crit += md.crit || 0; critDmg += md.critDmg || 0; haste += md.haste || 0;
+      regenPct += md.regen || 0; gold += md.gold || 0; xp += md.xp || 0; loot += md.loot || 0;
+    };
+
     // gear sets: 2 pieces for the stat, 3 for the signature effect
     const setCounts = {};
     const setFlags = {};
@@ -137,16 +146,17 @@ GQ.state = (() => {
     for (const [sk, cnt] of Object.entries(setCounts)) {
       const sdef = D.SETS[sk];
       if (!sdef) continue;
-      const applyMods = md => {
-        tDmg += md.dmg || 0; tHp += md.hp || 0; tArmorPct += md.armor || 0;
-        crit += md.crit || 0; critDmg += md.critDmg || 0; haste += md.haste || 0;
-        regenPct += md.regen || 0; gold += md.gold || 0; xp += md.xp || 0; loot += md.loot || 0;
-      };
       if (cnt >= 2 && sdef.two) applyMods(sdef.two);
       if (cnt >= 3) {
         if (sdef.three) applyMods(sdef.three);
         if (sdef.threeFlag) setFlags[sdef.threeFlag] = true;
       }
+    }
+
+    // the companion's perk
+    const petKey = S.pets && S.pets.active;
+    if (petKey && S.pets.owned[petKey] && D.COMPANIONS[petKey]) {
+      applyMods(D.COMPANIONS[petKey].mods);
     }
 
     crit = U.clamp(crit, 0, 60);
@@ -330,6 +340,9 @@ GQ.state = (() => {
       s.depth = Object.assign(base.depth, s.depth || {});
       s.shop = Object.assign(base.shop, s.shop || {});
       s.trials = s.trials || {};
+      s.pets = Object.assign(base.pets, s.pets || {});
+      s.pets.owned = s.pets.owned || {};
+      s.contracts = Object.assign(base.contracts, s.contracts || {});
       if (s.zoneId === 'trial') s.zoneId = 'meadow'; // trials never persist across loads
       if (s.questChain == null) s.questChain = 0;
       if (s.eventNext == null) s.eventNext = (s.stats.time || 0) + 120;

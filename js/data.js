@@ -61,6 +61,22 @@ GQ.data = (() => {
     anomalyDuration: 600,                // the door stays open 10 minutes
     anomalyGapMin: 1100,
     anomalyGapMax: 2000,
+    goblinChance: 0.012,                 // loot goblins: rare, rich, cowardly
+    goblinMinKills: 50,
+    goblinFlee: 8,                       // seconds before it escapes
+    shinyGapMin: 45,                     // clickable sparks
+    shinyGapMax: 120,
+    shinyLife: 5,
+    clickCd: 0.45,                       // manual strike cooldown
+    clickPower: 0.4,                     // manual strike = 40% of an attack
+    momentumMax: 10,                     // stacks from hands-on play
+    momentumDmg: 0.015,                  // +1.5% damage per stack
+    momentumDur: 5,                      // seconds before stacks fade
+    petDps: 0.15,                        // companion hits for 15% of your attack
+    petInterval: 2.0,
+    petDropChance: 0.2,                  // per boss kill, guaranteed by the 5th
+    petPityKills: 5,
+    contractHours: 20,                   // Bureau Contracts refresh (real time)
   };
 
   const RARITIES = [
@@ -441,6 +457,24 @@ GQ.data = (() => {
       stats: [{ k: 'atkPct', r: [12, 16] }, { k: 'hpPct', r: [12, 16] }, { k: 'xp', r: [12, 18] }] },
   };
 
+  // companions: each boss can drop a miniature of itself
+  const COMPANIONS = {
+    meadow:    { name: 'Tuskling',  perkDesc: '+10% gold',                    mods: { gold: 10 } },
+    forest:    { name: 'Moon Pup',  perkDesc: '+4% crit chance',              mods: { crit: 4 } },
+    camp:      { name: 'Grub',      perkDesc: '+8% XP',                       mods: { xp: 8 } },
+    cavern:    { name: 'Silkling',  perkDesc: '+6% attack speed',             mods: { haste: 6 } },
+    marsh:     { name: 'Haglet',    perkDesc: '+8% loot find',                mods: { loot: 8 } },
+    ember:     { name: 'Cinderpup', perkDesc: '+6% damage',                   mods: { dmg: 6 } },
+    frost:     { name: 'Snowball',  perkDesc: '+12% max HP',                  mods: { hp: 12 } },
+    temple:    { name: 'Tidebaby',  perkDesc: '+1% HP regen per second',      mods: { regen: 1 } },
+    ridge:     { name: 'Vexling',   perkDesc: '+8% damage',                   mods: { dmg: 8 } },
+    rift:      { name: 'Nully',     perkDesc: '+4% damage and +4% max HP',    mods: { dmg: 4, hp: 4 } },
+    farshore:  { name: 'Toll',      perkDesc: '+12% gold',                    mods: { gold: 12 } },
+    clockwork: { name: 'Tick',      perkDesc: '+8% attack speed',             mods: { haste: 8 } },
+    garden:    { name: 'Sprout',    perkDesc: '+10% max HP, +0.5%/s regen',   mods: { hp: 10, regen: 0.5 } },
+    throne:    { name: 'Echo',      perkDesc: '+10% XP and +5% damage',       mods: { xp: 10, dmg: 5 } },
+  };
+
   // roaming anomalies: temporary mini-dungeons, 10 kills, one chest
   const ANOMALIES = [
     { key: 'grotto', name: 'Gilded Grotto',    icon: '💰', reward: 'gold',   desc: 'The walls are money. The tenants object.' },
@@ -763,6 +797,12 @@ GQ.data = (() => {
       reward: { shards: 60 } },
     { key: 'rich1m',   name: 'Millionaire',        desc: 'Hold 1M gold at once',        check: s => s.hero.gold >= 1e6, reward: { shards: 50 } },
     { key: 'boar',     name: 'Money Well Spent',   desc: 'Buy the thing Griselda would not explain', check: s => ((s.shop && s.shop.boar) || 0) >= 1, reward: { shards: 100 } },
+    { key: 'pet1',     name: 'Plus One',           desc: 'A companion joins you',        check: s => Object.keys((s.pets && s.pets.owned) || {}).length >= 1,  reward: { shards: 20 } },
+    { key: 'pet14',    name: 'The Menagerie',      desc: 'Collect all 14 companions',    check: s => Object.keys((s.pets && s.pets.owned) || {}).length >= 14, reward: { shards: 300 } },
+    { key: 'goblin10', name: 'Goblin Tax',         desc: 'Catch 10 Loot Goblins',        check: s => (s.stats.goblins || 0) >= 10,   reward: { shards: 60 } },
+    { key: 'shiny25',  name: 'Magpie Eye',         desc: 'Snatch 25 shinies',            check: s => (s.stats.shinies || 0) >= 25,   reward: { shards: 40 } },
+    { key: 'click500', name: 'Hands-On Management', desc: 'Land 500 manual strikes',     check: s => (s.stats.clicks || 0) >= 500,   reward: { shards: 30 } },
+    { key: 'contract10', name: 'Company Loyalty',  desc: 'Fulfill 10 Bureau Contracts',  check: s => (s.stats.contracts || 0) >= 10, reward: { shards: 80 } },
   ];
 
   const TIPS = [
@@ -792,6 +832,11 @@ GQ.data = (() => {
     'Tip: four sealed lands wait beyond the Rift. The seal is the Unraveled King. Handle it.',
     'Tip: anomalies close in ten minutes. The chest inside does not wait for you to finish what you were doing.',
     'Tip: at level 40 your class remembers its ultimate. Key 4. You will know when.',
+    'Tip: you can hit the monster yourself. With your cursor. It counts, and it builds Momentum.',
+    'Tip: if something on the battlefield sparkles, click it before it stops sparkling.',
+    'Tip: Loot Goblins flee in eight seconds. That is what the ultimate is for.',
+    'Tip: bosses sometimes drop a smaller, friendlier version of themselves. Keep swinging.',
+    'Tip: Bureau Contracts refresh daily and pay in Soul Embers. The Bureau expects you back.',
   ];
 
   return {
@@ -800,6 +845,6 @@ GQ.data = (() => {
     UNIQUES, BOSSES, ABILITIES, ASC_UPGRADES, ASC_MIN_LEVEL, emberGain,
     FORGE_TIERS, ACHIEVEMENTS, TIPS,
     TALENT_TIERS, EVENTS, LORE, STARTER_QUESTS,
-    SETS, SHOP, TRIALS, ANOMALIES,
+    SETS, SHOP, TRIALS, ANOMALIES, COMPANIONS,
   };
 })();

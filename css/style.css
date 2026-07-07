@@ -573,6 +573,30 @@ select option{ background:#171d34; color:var(--text); }
 .shop-block{ color:var(--risky); font-size:10.5px; margin-top:2px; }
 .shop-row .btn{ flex:0 0 auto; min-width:74px; }
 
+/* ---------- v0.8: hands-on layer ---------- */
+#upnext{ font-size:11px; color:var(--faint); margin-top:7px; }
+#upnext b{ color:var(--gold2); font-weight:700; }
+.buff.mom{ border-color:#f0a05a88; color:#f8c89a; }
+.con-head{
+  font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint);
+  font-weight:700; margin:2px 0 8px; display:flex; justify-content:space-between; align-items:baseline;
+}
+.con-head span{ text-transform:none; letter-spacing:0; font-size:10.5px; font-style:italic; }
+.qcard.contract{ border-color:#6e5a2a; background:linear-gradient(180deg,#221d10,#151206); }
+.qcard.contract.done{ opacity:.55; }
+.qcard.contract .q-fill{ background:linear-gradient(180deg,#f0c060,#a8852a); }
+.pet-row{
+  display:flex; align-items:center; gap:11px; padding:8px 4px;
+  border-bottom:1px solid #ffffff08;
+}
+.pet-row.locked-pet{ opacity:.45; }
+.pet-ic{ font-size:19px; width:28px; text-align:center; flex:0 0 auto; }
+.pet-body{ flex:1; }
+.pet-name{ font-weight:700; font-size:13px; }
+.pet-desc{ color:var(--dim); font-size:11.5px; }
+.pet-row .btn{ flex:0 0 auto; min-width:78px; }
+#scene{ cursor:crosshair; }
+
 /* ---------- sealed zones, anomalies, ultimates ---------- */
 .zcard.sealedcard{ opacity:.6; cursor:default; }
 .zcard.sealedcard:hover{ transform:none; border-color:var(--line); }

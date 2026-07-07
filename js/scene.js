@@ -16,6 +16,7 @@ GQ.scene = (() => {
   let levelGlow = 0;
   let shake = 0;
   let banner = { t: 0, text: '' };
+  let shiny = null;      // {x, y, t}
 
   const api = { ready: false };
 
@@ -31,7 +32,38 @@ GQ.scene = (() => {
     if (window.ResizeObserver) {
       new ResizeObserver(resize).observe(cv.parentElement);
     }
+    // the battlefield is interactive: snatch shinies, strike the monster
+    cv.addEventListener('pointerdown', e => {
+      const r = cv.getBoundingClientRect();
+      const x = e.clientX - r.left;
+      const y = e.clientY - r.top;
+      if (shiny && Math.hypot(x - shiny.x, y - shiny.y) < 36) {
+        GQ.engine.collectShiny();
+        for (let i = 0; i < 12; i++) {
+          parts.push({
+            x: shiny.x, y: shiny.y,
+            vx: U.rand(-90, 90), vy: U.rand(-120, 20),
+            life: 0, max: U.rand(0.3, 0.7), color: '#f6dfa0', size: U.rand(1.5, 3), grav: 180,
+          });
+        }
+        shiny = null;
+        return;
+      }
+      const m = GQ.engine.combat.monster;
+      if (m && Math.abs(x - monX()) < 75 && y > groundY() - 135 && y < groundY() + 25) {
+        if (GQ.engine.manualStrike()) addShake(1);
+      }
+    });
     api.ready = true;
+  }
+
+  function hasShiny() { return !!shiny; }
+  function spawnShiny() {
+    shiny = {
+      x: U.rand(W * 0.12, W * 0.88),
+      y: U.rand(H * 0.18, H * 0.55),
+      t: 0,
+    };
   }
 
   function resize() {
@@ -95,6 +127,14 @@ GQ.scene = (() => {
         life: 0, max: 0.7, color: '#f6dfa0', size: 2.5, grav: -20,
       });
     }
+  }
+
+  function onPetHit(dmg) {
+    if (!GQ.state.S.settings.dmgNumbers) return;
+    floats.push({
+      x: monX() + U.rand(-26, 26), y: groundY() - 60,
+      vy: -30, txt: U.fmt(dmg), color: '#8fd0a0', size: 12, life: 0, max: 0.7,
+    });
   }
 
   function onArc(dmg) {
@@ -225,6 +265,30 @@ GQ.scene = (() => {
       ctx.fillStyle = '#f7526f';
       ctx.fillText(banner.text, W / 2, H * 0.26);
       ctx.restore();
+    }
+
+    // the shiny twinkles, briefly
+    if (shiny) {
+      shiny.t += dt;
+      if (shiny.t >= D.BAL.shinyLife) {
+        shiny = null;
+      } else {
+        const a = Math.min(1, shiny.t * 3) * Math.min(1, (D.BAL.shinyLife - shiny.t) / 0.8);
+        const pulse = 1 + 0.25 * Math.sin(t * 7);
+        ctx.save();
+        ctx.globalAlpha = a;
+        const sg = ctx.createRadialGradient(shiny.x, shiny.y, 1, shiny.x, shiny.y, 22 * pulse);
+        sg.addColorStop(0, '#fff7d8');
+        sg.addColorStop(0.4, '#f6dfa0');
+        sg.addColorStop(1, 'rgba(246,223,160,0)');
+        ctx.fillStyle = sg;
+        ctx.beginPath(); ctx.arc(shiny.x, shiny.y, 22 * pulse, 0, 7); ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = `${Math.round(15 * pulse)}px Georgia`;
+        ctx.textAlign = 'center';
+        ctx.fillText('✦', shiny.x, shiny.y + 5);
+        ctx.restore();
+      }
     }
 
     // trial clock
@@ -604,6 +668,18 @@ GQ.scene = (() => {
     }
     drawHero(ctx, hx, gy, t, GQ.state.heroClass(), { hurt: heroHurt, down: recovering });
 
+    // the companion, at heel (a much smaller boss, facing the fight)
+    const petKey = S.pets && S.pets.active;
+    if (petKey && S.pets.owned[petKey] && D.BOSSES[petKey] && !recovering) {
+      const b = D.BOSSES[petKey];
+      shadow(heroX() - 56, gy, 14);
+      ctx.save();
+      ctx.translate(heroX() - 56, gy + Math.sin(t * 3.1) * 1.5);
+      ctx.scale(-0.32 * b.size, 0.32 * b.size);
+      drawMonster(ctx, { shape: b.shape, hue: b.hue, size: 1 }, t * 1.4, 0);
+      ctx.restore();
+    }
+
     // hero bar + name
     nameBar(heroX(), gy - 128, U.esc ? S.hero.name : S.hero.name, S.hero.hp / Math.max(1, drv.hpMax),
       '#e0554f', '#f28d84', recovering ? 'Recovering…' : null);
@@ -649,9 +725,17 @@ GQ.scene = (() => {
       ctx.scale(scale * m.sp.size, scale * m.sp.size);
       drawMonster(ctx, m.sp, t, monFlash);
       ctx.restore();
-      nameBar(monX(), gy - 128, (m.bossZone ? '☠ ' : m.elite ? '★ ' : '') + m.name + (m.enraged ? ' — ENRAGED' : ''),
-        m.hp / m.hpMax, '#b0483f', '#e0837a', null,
-        m.bossZone ? (m.enraged ? '#f7526f' : '#f28d84') : m.elite ? '#f6dfa0' : '#e8edf7');
+      if (m.goblin && GQ.state.S.settings.particles && Math.random() < 0.25) {
+        parts.push({
+          x: mx + U.rand(-20, 20), y: gy - U.rand(10, 60),
+          vx: U.rand(-15, 15), vy: U.rand(-50, -10),
+          life: 0, max: 0.5, color: '#f6dfa0', size: U.rand(1.2, 2.2), grav: 60,
+        });
+      }
+      nameBar(monX(), gy - 128, (m.goblin ? '💰 ' : m.bossZone ? '☠ ' : m.elite ? '★ ' : '') + m.name + (m.enraged ? ' — ENRAGED' : ''),
+        m.hp / m.hpMax, '#b0483f', '#e0837a',
+        m.goblin ? 'flees in ' + Math.ceil(Math.max(0, m.fleeT)) + 's' : null,
+        m.goblin ? '#f6dfa0' : m.bossZone ? (m.enraged ? '#f7526f' : '#f28d84') : m.elite ? '#f6dfa0' : '#e8edf7');
     } else if (!recovering) {
       ctx.save();
       ctx.globalAlpha = 0.4 + 0.2 * Math.sin(t * 4);
@@ -1223,6 +1307,9 @@ GQ.scene = (() => {
   api.onBuff = onBuff;
   api.onStun = onStun;
   api.onArc = onArc;
+  api.onPetHit = onPetHit;
+  api.hasShiny = hasShiny;
+  api.spawnShiny = spawnShiny;
   api.drawPortrait = drawPortrait;
   api.drawHeroFn = drawHero;
   return api;
