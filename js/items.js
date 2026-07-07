@@ -141,6 +141,10 @@ GQ.items = (() => {
   }
 
   function equip(id) {
+    if (S().challenge === 'naked') {
+      if (GQ.ui) GQ.ui.toast('🧺 The Pilgrimage forbids it. Skin and stubbornness only.', 'r5');
+      return false;
+    }
     const f = findInv(id);
     if (!f) return false;
     const eq = S().hero.equipment;

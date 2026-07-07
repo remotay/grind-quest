@@ -28,6 +28,7 @@ GQ.ui = (() => {
     ].forEach(id => { el[id] = $(id); });
 
     el['btn-pets'].addEventListener('click', petsModal);
+    document.getElementById('hero-sub').addEventListener('click', titlesModal);
 
     // Griselda's shop
     el['shop-list'].addEventListener('click', e => {
@@ -209,6 +210,13 @@ GQ.ui = (() => {
     const items = [];
     const L = S().hero.level;
     const zid = S().zoneId;
+    if (S().challenge) {
+      const ch = D.CHALLENGES.find(c => c.key === S().challenge);
+      if (ch) {
+        const prog = ch.goalType === 'bosses' ? ` (${S().challengeProg.bosses || 0}/${ch.goalN})` : ` (Lv ${L}/${ch.goalN})`;
+        items.push(`${ch.icon} <b>${ch.name}</b>: ${ch.goal}${prog}`);
+      }
+    }
     if (D.BOSSES[zid]) {
       const bp = S().boss.progress[zid] || 0;
       items.push(bp >= D.BAL.bossKillsNeeded
@@ -274,6 +282,8 @@ GQ.ui = (() => {
     el['hero-name'].textContent = h.name;
     el['hero-class'].textContent = cls.name;
     el['hero-level'].textContent = h.level;
+    const tdef = S().title && D.TITLES.find(t => t.key === S().title);
+    document.getElementById('hero-title').textContent = tdef ? ` · ${tdef.label}` : '';
     el['gs-val'].textContent = U.fmtInt(GQ.state.gearScoreTotal());
     el['pow-val'].textContent = U.fmt(GQ.state.power(d));
     const pts = GQ.state.talentPointsAvailable();
@@ -572,10 +582,13 @@ GQ.ui = (() => {
       if (bEl && boss) {
         const bp = S().boss.progress[z.id] || 0;
         const bk = S().boss.kills[z.id] || 0;
-        const conquered = bk > 0 ? ` <span style="color:var(--gold)">⚔ ×${bk}</span>` : '';
+        const nmk = (S().boss.nightmares || {})[z.id] || 0;
+        const isNm = bk > 0;
+        const badges = (bk > 0 ? ` <span style="color:var(--gold)">⚔ ×${bk}</span>` : '') +
+          (nmk > 0 ? ` <span style="color:#c9a0f0">🌑 ×${nmk}</span>` : '');
         bEl.innerHTML = bp >= D.BAL.bossKillsNeeded
-          ? `<button class="btn small gold zc-boss-btn">☠ Challenge ${boss.name}</button>`
-          : `<span class="zc-m-txt">☠ ${boss.name}${conquered} — ready in ${D.BAL.bossKillsNeeded - bp} kills</span>`;
+          ? `<button class="btn small gold zc-boss-btn">${isNm ? '🌑 Nightmare' : '☠ Challenge'} ${boss.name}</button>`
+          : `<span class="zc-m-txt">${isNm ? '🌑' : '☠'} ${boss.name}${badges} — ready in ${D.BAL.bossKillsNeeded - bp} kills</span>`;
       }
 
       // the chase item
@@ -1059,6 +1072,39 @@ GQ.ui = (() => {
       });
   }
 
+  function titlesModal() {
+    const s = S();
+    const rows = D.TITLES.map(t => {
+      const has = (() => { try { return t.earned(s); } catch (e) { return false; } })();
+      const wearing = s.title === t.key;
+      if (!has) {
+        return `<div class="pet-row locked-pet"><span class="pet-ic">🔒</span>
+          <div class="pet-body"><div class="pet-name">${t.label}</div><div class="pet-desc">${t.how}</div></div></div>`;
+      }
+      return `<div class="pet-row"><span class="pet-ic">📛</span>
+        <div class="pet-body"><div class="pet-name">${t.label}</div><div class="pet-desc">${t.how}</div></div>
+        <button class="btn small ${wearing ? '' : 'gold'}" data-title="${t.key}">${wearing ? 'Remove' : 'Wear'}</button>
+      </div>`;
+    }).join('');
+    const m = openModal(`
+      <h3>📛 Titles</h3>
+      <p style="color:var(--dim);font-size:12.5px">Honorifics, earned the hard way. One at a time; the Bureau frowns on stacking.</p>
+      ${rows}
+      <div class="btnrow"><button class="btn gold" id="titles-close">Done</button></div>`);
+    m.querySelectorAll('[data-title]').forEach(btn => {
+      btn.onclick = () => {
+        const key = btn.dataset.title;
+        S().title = (S().title === key) ? null : key;
+        GQ.state.save();
+        GQ.audio.click();
+        markDirty('char');
+        closeModal();
+        titlesModal();
+      };
+    });
+    m.querySelector('#titles-close').onclick = closeModal;
+  }
+
   function petsModal() {
     const owned = S().pets.owned;
     const active = S().pets.active;
@@ -1152,19 +1198,49 @@ GQ.ui = (() => {
       </div>`;
     }).join('');
 
+    const chRows = D.CHALLENGES.map(ch => {
+      const owned = !!S().relics[ch.relic.key];
+      return `<div class="asc-up ${owned ? 'ch-done' : ''}">
+        <div class="asc-ic">${ch.icon}</div>
+        <div class="asc-body">
+          <div class="asc-name">${ch.name} ${owned ? `<span style="color:var(--gold);font-size:11px">${ch.relic.icon} relic owned</span>` : ''}</div>
+          <div class="asc-desc">${ch.desc} · Goal: <b>${ch.goal}</b> · Relic: ${ch.relic.desc}</div>
+        </div>
+        <button class="btn small ${canAscend && !owned ? 'gold' : ''}" data-ch="${ch.key}" ${(canAscend && !owned) ? '' : 'disabled'}>Enter</button>
+      </div>`;
+    }).join('');
+
     const m = openModal(`
       <h3>🔥 Ascension</h3>
       <p style="color:var(--dim);font-size:13px;line-height:1.6">Sacrifice this run — level, gear, gold, shards — for <b style="color:#ff9a5a">Soul Embers</b>.
-      Mastery, conquests, unique discoveries, achievements and these upgrades are <b>forever</b>.</p>
+      Mastery, conquests, unique discoveries, achievements, relics and these upgrades are <b>forever</b>.</p>
       <div class="mrow"><label>Soul Embers</label><b style="color:#ff9a5a">🔥 ${U.fmt(a.embers)}</b></div>
       <div class="mrow"><label>Ascensions completed</label><b>${a.count}</b></div>
       <div class="divider"></div>
       ${ups}
       <div class="divider"></div>
+      <div class="con-head">⚔ Challenge Runs <span>ascend into a handicap, come back with a Relic</span></div>
+      ${chRows}
+      <div class="divider"></div>
       <div class="btnrow" style="justify-content:space-between">
         <button class="btn danger" id="asc-go" ${canAscend ? '' : 'disabled'}>${canAscend ? `Ascend now (+${gain} 🔥)` : `Ascend (requires level ${D.ASC_MIN_LEVEL})`}</button>
         <button class="btn" id="asc-close">Close</button>
       </div>`);
+
+    const performAscension = chKey => {
+      const ch = chKey && D.CHALLENGES.find(c => c.key === chKey);
+      GQ.state.ascend(chKey);
+      GQ.audio.ascend();
+      GQ.engine.setZone('meadow', true);
+      log(`<b>🔥 ASCENSION ${S().asc.count}.</b> The grind remembers you. +${gain} Soul Embers.`, 'level');
+      if (ch) {
+        log(`<b>${ch.icon} ${ch.name} begins.</b> ${ch.desc} Goal: ${ch.goal}. The Relic is watching.`, 'sys');
+        toast(`${ch.icon} Challenge accepted: ${ch.name}`, 'gold', 5);
+      } else {
+        toast(`🔥 Ascended! +${gain} Soul Embers`, 'gold', 5);
+      }
+      markDirty('char', 'inv', 'zones', 'res', 'quests', 'records', 'zonehdr');
+    };
 
     m.querySelectorAll('[data-up]').forEach(btn => {
       btn.onclick = () => {
@@ -1181,18 +1257,19 @@ GQ.ui = (() => {
         ascensionModal();
       };
     });
+    m.querySelectorAll('[data-ch]').forEach(btn => {
+      btn.onclick = () => {
+        const ch = D.CHALLENGES.find(c => c.key === btn.dataset.ch);
+        confirmModal(
+          `Ascend into <b>${ch.icon} ${ch.name}</b> for <b style="color:#ff9a5a">+${gain} Soul Embers</b>?<br><br>${ch.desc} The restriction holds until you ${ch.goal.toLowerCase()} — then it lifts and <b>${ch.relic.name}</b> (${ch.relic.desc}) is yours for good.`,
+          () => performAscension(ch.key));
+      };
+    });
     m.querySelector('#asc-close').onclick = closeModal;
     if (canAscend) {
       m.querySelector('#asc-go').onclick = () => confirmModal(
         `Ascend now for <b style="color:#ff9a5a">+${gain} Soul Embers</b>? Your level, gear, gold and shards will be consumed. Your permanent bonuses remain.`,
-        () => {
-          GQ.state.ascend();
-          GQ.audio.ascend();
-          GQ.engine.setZone('meadow', true);
-          log(`<b>🔥 ASCENSION ${S().asc.count}.</b> The grind remembers you. +${gain} Soul Embers.`, 'level');
-          toast(`🔥 Ascended! +${gain} Soul Embers`, 'gold', 5);
-          markDirty('char', 'inv', 'zones', 'res', 'quests', 'records', 'zonehdr');
-        });
+        () => performAscension(null));
     }
   }
 
@@ -1221,6 +1298,7 @@ GQ.ui = (() => {
       <div class="stat-row"><span class="sname">Uniques discovered</span><span class="sval rc6">${Object.keys(st.uniquesFound || {}).length} / ${Object.keys(D.UNIQUES).length}</span></div>
       <div class="stat-row"><span class="sname">Mastery tiers</span><span class="sval">${GQ.state.masteryTierTotal()} / ${D.ZONES.length * D.BAL.masteryTiers.length}</span></div>
       <div class="stat-row"><span class="sname">Bosses conquered</span><span class="sval">${GQ.state.conqueredCount()} / ${Object.keys(D.BOSSES).length}</span></div>
+      <div class="stat-row"><span class="sname">Nightmares broken</span><span class="sval" style="color:#c9a0f0">${Object.keys(S().boss.nightmares || {}).length} / ${Object.keys(D.BOSSES).length}</span></div>
       <div class="stat-row"><span class="sname">Anomalies looted</span><span class="sval">${U.fmtInt(st.anomalies || 0)}</span></div>
       <div class="stat-row"><span class="sname">Loot Goblins caught</span><span class="sval">${U.fmtInt(st.goblins || 0)}</span></div>
       <div class="stat-row"><span class="sname">Shinies snatched</span><span class="sval">${U.fmtInt(st.shinies || 0)}</span></div>
@@ -1240,6 +1318,15 @@ GQ.ui = (() => {
           <div class="bst-lore">${tier > 0 ? D.LORE[sp.name] || '' : '— field notes pending —'}</div>
         </div>`;
       }).join('')).join('')}
+      <h4>Relics (${Object.keys(S().relics || {}).length}/${D.CHALLENGES.length})</h4>
+      ${D.CHALLENGES.map(ch => {
+        const has = (S().relics || {})[ch.relic.key];
+        return `<div class="ach ${has ? 'done' : ''}">
+          <span class="ach-mark">${has ? ch.relic.icon : '·'}</span>
+          <span class="ach-name">${ch.relic.name}</span>
+          <span class="ach-desc">${has ? ch.relic.desc : ch.name + ' — ' + ch.goal}</span>
+        </div>`;
+      }).join('')}
       <h4>Achievements (${Object.keys(st.achDone || {}).length}/${D.ACHIEVEMENTS.length})</h4>
       ${D.ACHIEVEMENTS.map(a => {
         const done = (st.achDone || {})[a.key];

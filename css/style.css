@@ -573,6 +573,12 @@ select option{ background:#171d34; color:var(--text); }
 .shop-block{ color:var(--risky); font-size:10.5px; margin-top:2px; }
 .shop-row .btn{ flex:0 0 auto; min-width:74px; }
 
+/* ---------- v0.9: the gauntlet ---------- */
+#hero-sub{ cursor:pointer; }
+#hero-sub:hover{ color:var(--text); }
+#hero-title{ color:var(--gold); font-style:italic; }
+.asc-up.ch-done{ opacity:.55; }
+
 /* ---------- v0.8: hands-on layer ---------- */
 #upnext{ font-size:11px; color:var(--faint); margin-top:7px; }
 #upnext b{ color:var(--gold2); font-weight:700; }

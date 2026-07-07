@@ -77,6 +77,11 @@ GQ.data = (() => {
     petDropChance: 0.2,                  // per boss kill, guaranteed by the 5th
     petPityKills: 5,
     contractHours: 20,                   // Bureau Contracts refresh (real time)
+    nightmareLevels: 8,                  // nightmare bosses fight this many levels up
+    nightmareEnrage: 40,                 // and enrage sooner
+    nightmareDmgPerFirst: 0.02,          // permanent damage per first nightmare kill
+    nightmareSetChance: 0.6,
+    nightmareUniqueChance: 0.2,
   };
 
   const RARITIES = [
@@ -457,6 +462,42 @@ GQ.data = (() => {
       stats: [{ k: 'atkPct', r: [12, 16] }, { k: 'hpPct', r: [12, 16] }, { k: 'xp', r: [12, 18] }] },
   };
 
+  // challenge runs: ascend into a restriction, earn a permanent Relic
+  const CHALLENGES = [
+    { key: 'glass', name: 'Glass Cannon', icon: '🍷', desc: 'Your max HP is quartered.',
+      goal: 'Reach level 25', goalType: 'level', goalN: 25,
+      relic: { key: 'cannon', name: "Cannon's Memory", icon: '💥', desc: '+10% damage, forever', mods: { dmg: 10 } } },
+    { key: 'naked', name: 'Naked Pilgrimage', icon: '🧺', desc: 'You cannot equip anything.',
+      goal: 'Reach level 20', goalType: 'level', goalN: 20,
+      relic: { key: 'pilgrim', name: "Pilgrim's Hide", icon: '🧱', desc: '+15% max HP, forever', mods: { hp: 15 } } },
+    { key: 'silent', name: 'Silent Hands', icon: '🤐', desc: 'Your abilities are sealed.',
+      goal: 'Conquer 3 bosses', goalType: 'bosses', goalN: 3,
+      relic: { key: 'rhythm', name: 'Steady Rhythm', icon: '🥁', desc: '+8% attack speed, forever', mods: { haste: 8 } } },
+    { key: 'famine', name: 'Famine', icon: '🍂', desc: 'Monsters drop no equipment. The Forge still deals.',
+      goal: 'Reach level 22', goalType: 'level', goalN: 22,
+      relic: { key: 'pockets', name: 'Empty Pockets, Full Ledger', icon: '🪙', desc: '+20% gold, forever', mods: { gold: 20 } } },
+    { key: 'deathmarch', name: 'Deathmarch', icon: '💀', desc: 'A single KO ends the challenge.',
+      goal: 'Conquer 2 bosses', goalType: 'bosses', goalN: 2,
+      relic: { key: 'heartbeat', name: 'Second Heartbeat', icon: '❤️‍🔥', desc: '+1%/s HP regen, forever', mods: { regen: 1 } } },
+    { key: 'dark', name: 'The Long Dark', icon: '🕯️', desc: 'XP gain reduced by 75%.',
+      goal: 'Reach level 15', goalType: 'level', goalN: 15,
+      relic: { key: 'scholar', name: 'Night Scholar', icon: '📖', desc: '+10% XP, forever', mods: { xp: 10 } } },
+  ];
+
+  // titles: honorifics worn under your name
+  const TITLES = [
+    { key: 'grinder',      label: 'the Grinder',           how: 'Slay 1,000 monsters',            earned: s => s.stats.kills >= 1000 },
+    { key: 'reborn',       label: 'the Twice-Born',        how: 'Ascend once',                    earned: s => (s.asc.count || 0) >= 1 },
+    { key: 'medalist',     label: 'Medalist',              how: 'Earn any gold medal',            earned: s => TRIALS.some(t => ((s.trials || {})[t.key] || 0) >= t.medals[2]) },
+    { key: 'kingslayer',   label: 'Kingslayer',            how: 'Medal in the Proof of Kings',    earned: s => ((s.trials || {}).kings || 0) >= 3 },
+    { key: 'nightmare',    label: 'the Nightmare',         how: 'Defeat a Nightmare boss',        earned: s => Object.keys((s.boss && s.boss.nightmares) || {}).length >= 1 },
+    { key: 'unbroken',     label: 'the Unbroken',          how: 'Survive the Deathmarch',         earned: s => !!((s.relics || {}).heartbeat) },
+    { key: 'silentone',    label: 'the Silent',            how: 'Win with sealed hands',          earned: s => !!((s.relics || {}).rhythm) },
+    { key: 'menagerist',   label: 'Friend of Monsters',    how: 'Collect all 14 companions',      earned: s => Object.keys((s.pets && s.pets.owned) || {}).length >= 14 },
+    { key: 'bottomless',   label: 'the Bottomless',        how: 'Clear Depth 10',                 earned: s => ((s.depth && s.depth.best) || 0) >= 10 },
+    { key: 'transcendent', label: 'the Transcendent',      how: 'Conquer the Throne of the Last God', earned: s => ((s.boss && s.boss.kills.throne) || 0) >= 1 },
+  ];
+
   // companions: each boss can drop a miniature of itself
   const COMPANIONS = {
     meadow:    { name: 'Tuskling',  perkDesc: '+10% gold',                    mods: { gold: 10 } },
@@ -803,6 +844,10 @@ GQ.data = (() => {
     { key: 'shiny25',  name: 'Magpie Eye',         desc: 'Snatch 25 shinies',            check: s => (s.stats.shinies || 0) >= 25,   reward: { shards: 40 } },
     { key: 'click500', name: 'Hands-On Management', desc: 'Land 500 manual strikes',     check: s => (s.stats.clicks || 0) >= 500,   reward: { shards: 30 } },
     { key: 'contract10', name: 'Company Loyalty',  desc: 'Fulfill 10 Bureau Contracts',  check: s => (s.stats.contracts || 0) >= 10, reward: { shards: 80 } },
+    { key: 'relic1',   name: 'Proved a Point',     desc: 'Complete a challenge run',     check: s => Object.keys(s.relics || {}).length >= 1, reward: { shards: 100 } },
+    { key: 'relic6',   name: 'Collector of Scars', desc: 'Earn all six Relics',          check: s => Object.keys(s.relics || {}).length >= 6, reward: { shards: 400 } },
+    { key: 'nm1',      name: 'Bad Dreams',         desc: 'Defeat a Nightmare boss',      check: s => Object.keys((s.boss && s.boss.nightmares) || {}).length >= 1,  reward: { shards: 60 } },
+    { key: 'nm14',     name: 'Lucid',              desc: 'Defeat every Nightmare boss',  check: s => Object.keys((s.boss && s.boss.nightmares) || {}).length >= 14, reward: { shards: 400 } },
   ];
 
   const TIPS = [
@@ -837,6 +882,9 @@ GQ.data = (() => {
     'Tip: Loot Goblins flee in eight seconds. That is what the ultimate is for.',
     'Tip: bosses sometimes drop a smaller, friendlier version of themselves. Keep swinging.',
     'Tip: Bureau Contracts refresh daily and pay in Soul Embers. The Bureau expects you back.',
+    'Tip: challenge runs are ascensions with a handicap and a Relic at the end. Scars are permanent stats.',
+    'Tip: a conquered boss returns as a Nightmare. Better loot, worse temper, +2% damage forever for the first kill.',
+    'Tip: titles are earned, worn, and legally binding. Click your name.',
   ];
 
   return {
@@ -845,6 +893,6 @@ GQ.data = (() => {
     UNIQUES, BOSSES, ABILITIES, ASC_UPGRADES, ASC_MIN_LEVEL, emberGain,
     FORGE_TIERS, ACHIEVEMENTS, TIPS,
     TALENT_TIERS, EVENTS, LORE, STARTER_QUESTS,
-    SETS, SHOP, TRIALS, ANOMALIES, COMPANIONS,
+    SETS, SHOP, TRIALS, ANOMALIES, COMPANIONS, CHALLENGES, TITLES,
   };
 })();

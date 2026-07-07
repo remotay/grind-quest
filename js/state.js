@@ -53,7 +53,12 @@ GQ.state = (() => {
       boss: {
         progress: {},        // zoneId -> kills banked toward next attempt
         kills: {},           // zoneId -> times conquered
+        nightmares: {},      // zoneId -> nightmare kills (account layer)
       },
+      challenge: null,       // active challenge key for this run
+      challengeProg: { bosses: 0 },
+      relics: {},            // relicKey -> true (account layer)
+      title: null,           // chosen honorific key
       quests: [],
       questChain: 0,         // index into STARTER_QUESTS
       talents: {},           // tierIndex -> pickKey (reset on ascension)
@@ -159,6 +164,11 @@ GQ.state = (() => {
       applyMods(D.COMPANIONS[petKey].mods);
     }
 
+    // relics: scars from finished challenge runs
+    for (const ch of D.CHALLENGES) {
+      if ((S.relics || {})[ch.relic.key]) applyMods(ch.relic.mods);
+    }
+
     crit = U.clamp(crit, 0, 60);
     armor *= 1 + tArmorPct / 100;
 
@@ -172,10 +182,12 @@ GQ.state = (() => {
     crit = U.clamp(crit + 3 * (up.crit || 0), 0, 60);
     const dmgPerm = (1 + D.BAL.masteryDmgPerTier * masteryTierTotal())
       * (1 + D.BAL.bossDmgPerConquest * conqueredCount())
+      * (1 + D.BAL.nightmareDmgPerFirst * Object.keys((S.boss && S.boss.nightmares) || {}).length)
       * (1 + 0.10 * (up.str || 0))
       * (1 + tDmg / 100);
     const atk = atkFlat * (1 + atkPct / 100) * dmgPerm;
-    const hpMax = hpFlat * (1 + hpPct / 100) * (1 + 0.10 * (up.vig || 0)) * (1 + tHp / 100);
+    let hpMax = hpFlat * (1 + hpPct / 100) * (1 + 0.10 * (up.vig || 0)) * (1 + tHp / 100);
+    if (S.challenge === 'glass') hpMax *= 0.25; // the Glass Cannon deal
     gold += 25 * (up.gold || 0);
     xp += 10 * (up.xp || 0);
     loot += 10 * (up.loot || 0) + D.BAL.lootPerUnique * Object.keys(S.stats.uniquesFound || {}).length;
@@ -253,8 +265,9 @@ GQ.state = (() => {
     return D.BAL.offlineCap + 7200 * ((api.S && api.S.asc.up.offcap) || 0);
   }
 
-  // prestige: bank embers, reset the run, keep the permanent layer
-  function ascend() {
+  // prestige: bank embers, reset the run, keep the permanent layer.
+  // Pass a challenge key to ascend INTO a restriction (and toward its Relic).
+  function ascend(challengeKey) {
     const S = api.S;
     const gain = emberPreview();
     if (gain <= 0) return false;
@@ -276,6 +289,8 @@ GQ.state = (() => {
     S.depth.current = 1;
     S.depth.kills = 0;
     S.event = null;
+    S.challenge = challengeKey || null;
+    S.challengeProg = { bosses: 0 };
     S.stats.pity = 20;
     recalc();
     S.hero.hp = api.drv.hpMax;
@@ -343,6 +358,11 @@ GQ.state = (() => {
       s.pets = Object.assign(base.pets, s.pets || {});
       s.pets.owned = s.pets.owned || {};
       s.contracts = Object.assign(base.contracts, s.contracts || {});
+      s.boss.nightmares = s.boss.nightmares || {};
+      s.relics = s.relics || {};
+      if (!('challenge' in s)) s.challenge = null;
+      s.challengeProg = Object.assign(base.challengeProg, s.challengeProg || {});
+      if (!('title' in s)) s.title = null;
       if (s.zoneId === 'trial') s.zoneId = 'meadow'; // trials never persist across loads
       if (s.questChain == null) s.questChain = 0;
       if (s.eventNext == null) s.eventNext = (s.stats.time || 0) + 120;

@@ -269,6 +269,7 @@ GQ.engine = (() => {
     if (!ab || (combat.cds[ab.key] || 0) > 0 || combat.recover > 0) return false;
     const d = drv(), h = S().hero;
     if (ab.unlock && S().hero.level < ab.unlock) return false;
+    if (S().challenge === 'silent') return false; // sealed hands
     if (ab.kind === 'strike') {
       if (!combat.monster) return false;
       dealDamage(ab.power, !!ab.alwaysCrit);
@@ -346,23 +347,29 @@ GQ.engine = (() => {
     if ((S().boss.progress[zoneId] || 0) < D.BAL.bossKillsNeeded) return false;
     if (S().zoneId !== zoneId) setZone(zoneId);
     S().boss.progress[zoneId] = 0;
-    const hpMax = D.BAL.monsterHp(z.level) * D.BAL.bossHpMult;
+    // a conquered boss comes back angrier: the Nightmare form
+    const nightmare = (S().boss.kills[zoneId] || 0) > 0;
+    const effLvl = z.level + (nightmare ? D.BAL.nightmareLevels : 0);
+    const hpMax = D.BAL.monsterHp(effLvl) * D.BAL.bossHpMult;
     combat.monster = {
-      sp: { shape: b.shape, hue: b.hue, size: b.size },
+      sp: { shape: b.shape, hue: b.hue, size: b.size * (nightmare ? 1.08 : 1) },
       bossZone: zoneId,
-      name: b.name,
+      nightmare,
+      name: (nightmare ? 'Nightmare ' : '') + b.name,
       hp: hpMax, hpMax,
-      dmg: D.BAL.monsterDmg(z.level) * D.BAL.bossDmgMult,
+      dmg: D.BAL.monsterDmg(effLvl) * D.BAL.bossDmgMult,
       atkInt: D.BAL.bossAtkInterval,
-      xp: D.BAL.xpKill(z.level) * D.BAL.bossXpMult,
-      gold: D.BAL.goldKill(z.level) * D.BAL.bossGoldMult,
-      zoneLevel: z.level,
+      xp: D.BAL.xpKill(effLvl) * D.BAL.bossXpMult,
+      gold: D.BAL.goldKill(effLvl) * D.BAL.bossGoldMult,
+      zoneLevel: effLvl,
       age: 0, stun: 0,
     };
     combat.matkT = 1.8;
-    ui().log(`<b>☠ ${b.name}</b> — ${b.title} — steps out of the dark.`, 'death');
+    ui().log(nightmare
+      ? `<b>☠ Nightmare ${b.name}</b> remembers you. It has been practicing.`
+      : `<b>☠ ${b.name}</b> — ${b.title} — steps out of the dark.`, 'death');
     GQ.audio.boss();
-    if (scene()) { scene().onSpawn(combat.monster); scene().onBossStart(b.name); }
+    if (scene()) { scene().onSpawn(combat.monster); scene().onBossStart((nightmare ? 'NIGHTMARE ' : '') + b.name); }
     ui().markDirty('zones');
     return true;
   }
@@ -378,6 +385,13 @@ GQ.engine = (() => {
       S().boss.progress[combat.monster.bossZone] = D.BAL.bossKillsNeeded;
       ui().log(`${combat.monster.name} lets you live. Out of pity.`, 'sys');
       ui().markDirty('zones');
+    }
+    if (S().challenge === 'deathmarch') {
+      S().challenge = null;
+      GQ.state.recalc();
+      ui().toast('💀 The Deathmarch ends where you fell.', 'r5', 5);
+      ui().log('<b>💀 Deathmarch failed.</b> One KO was the whole rule. The Relic remains unclaimed.', 'death');
+      ui().markDirty('char', 'zonehdr');
     }
     if (S().zoneId === 'depth' && S().depth.kills > 0) {
       if (S().shop.insurance > 0) {
@@ -510,8 +524,9 @@ GQ.engine = (() => {
     S().hero.gold += gold;
     S().stats.goldEarned += gold;
 
-    // xp
-    const xpGain = m.xp * (1 + d.xp / 100) * D.grayMult(L, z.level) * (em.xp || 1) * (gm.xpM || 1);
+    // xp (the Long Dark starves it)
+    const xpGain = m.xp * (1 + d.xp / 100) * D.grayMult(L, z.level) * (em.xp || 1) * (gm.xpM || 1)
+      * (S().challenge === 'dark' ? 0.25 : 1);
     addXp(xpGain);
 
     if (m.bossZone) {
@@ -519,15 +534,16 @@ GQ.engine = (() => {
     } else {
       // loot: rare rolls with a pity floor; elites always pay out
       S().stats.pity = (S().stats.pity || 0) + 1;
-      const dropped = m.elite || gm.dropSure ||
+      const famine = S().challenge === 'famine';
+      const dropped = !famine && (m.elite || gm.dropSure ||
         Math.random() < D.BAL.dropChance * (1 + d.loot / 100) * (em.drop || 1) ||
-        S().stats.pity >= D.BAL.pityKills;
+        S().stats.pity >= D.BAL.pityKills);
       if (dropped) {
         S().stats.pity = 0;
         dropItem(z, d);
       }
       // named zone treasure
-      if (Math.random() < D.BAL.uniqueChance * (1 + d.loot / 100) * (em.uniq || 1)) {
+      if (!famine && Math.random() < D.BAL.uniqueChance * (1 + d.loot / 100) * (em.uniq || 1)) {
         dropUnique(z);
       }
       if (Math.random() < D.BAL.shardDropChance) {
@@ -566,12 +582,14 @@ GQ.engine = (() => {
     S().boss.kills[bz] = (S().boss.kills[bz] || 0) + 1;
 
     // guaranteed spoils: legendary floor on first conquest, rare floor after;
-    // bosses are also the best source of set pieces
-    const floor = first ? 4 : 2;
+    // nightmares pay an epic floor and lean hard into sets and uniques
+    const nm = !!m.nightmare;
+    const floor = first ? 4 : nm ? 3 : 2;
+    const ilvlBonus = nm ? 2 + D.BAL.nightmareLevels : 2;
     const rar = Math.max(floor, GQ.items.rollRarity(d.loot));
-    const item = Math.random() < D.BAL.bossSetChance
-      ? GQ.items.generateSetPiece(z.level + 2, d.loot, rar)
-      : GQ.items.generateItem(z.level + 2, d.loot, rar);
+    const item = Math.random() < (nm ? D.BAL.nightmareSetChance : D.BAL.bossSetChance)
+      ? GQ.items.generateSetPiece(z.level + ilvlBonus, d.loot, rar)
+      : GQ.items.generateItem(z.level + ilvlBonus, d.loot, rar);
     S().stats.itemsFound++;
     if (item.rar > S().stats.bestRarity) S().stats.bestRarity = item.rar;
     const nameHtml = `<span class="rc${item.rar}">[${U.esc(item.name)}]</span>`;
@@ -588,7 +606,18 @@ GQ.engine = (() => {
     }
     ui().toast(`${D.RARITIES[item.rar].name} spoils! <span class="rc${item.rar}">${U.esc(item.name)}</span>`, 'r' + item.rar);
     if (scene()) scene().onDrop(item.rar);
-    if (Math.random() < D.BAL.bossUniqueChance) dropUnique(z);
+    if (Math.random() < (nm ? D.BAL.nightmareUniqueChance : D.BAL.bossUniqueChance)) dropUnique(z);
+
+    // first Nightmare kill of each boss: another permanent notch
+    if (nm && !S().boss.nightmares[bz]) {
+      S().boss.nightmares[bz] = 1;
+      GQ.state.recalc();
+      ui().toast(`🌑 NIGHTMARE CONQUERED: <b>${D.BOSSES[bz].name}</b> — permanent +2% damage`, 'gold', 5.5);
+      ui().log(`<b>🌑 The Nightmare breaks.</b> ${D.BOSSES[bz].name} will not sleep well either. Permanent +2% damage.`, 'level');
+      GQ.audio.conquer();
+    } else if (nm) {
+      S().boss.nightmares[bz]++;
+    }
 
     if (first) {
       GQ.state.recalc();
@@ -607,6 +636,12 @@ GQ.engine = (() => {
       ui().log(`<b>${D.BOSSES[bz].name}</b> defeated again. It is getting embarrassing for them.`, 'level');
       GQ.audio.conquer();
     }
+    // challenge goals that count bosses
+    if (S().challenge) {
+      S().challengeProg.bosses = (S().challengeProg.bosses || 0) + 1;
+      checkChallenge();
+    }
+
     // a boss sometimes drops a smaller, friendlier version of itself
     if (D.COMPANIONS[bz] && !S().pets.owned[bz]) {
       const kills = S().boss.kills[bz] || 0;
@@ -699,6 +734,7 @@ GQ.engine = (() => {
       GQ.audio.level();
       if (scene()) scene().onLevelUp();
       questEvent('level', h.level);
+      if (S().challenge) checkChallenge();
       if (GQ.state.talentPointsAvailable() > 0 && D.TALENT_TIERS.some(t => t.lvl === h.level)) {
         ui().toast('🎯 Talent point available!', 'gold');
         ui().log('<b>🎯 Talent point available.</b> The button in your character panel is glowing on purpose.', 'sys');
@@ -784,7 +820,7 @@ GQ.engine = (() => {
     // boss enrage: the DPS check
     if (m.bossZone) {
       m.age += dt;
-      if (!m.enraged && m.age > D.BAL.bossEnrage) {
+      if (!m.enraged && m.age > (m.nightmare ? D.BAL.nightmareEnrage : D.BAL.bossEnrage)) {
         m.enraged = true;
         m.dmg *= D.BAL.bossEnrageDmgMult;
         m.atkInt = Math.max(1.0, (m.atkInt || D.BAL.monsterAtkInterval) * 0.6);
@@ -869,6 +905,7 @@ GQ.engine = (() => {
     if (combat.achT > 2) {
       combat.achT = 0;
       checkAchievements();
+      if (S().challenge) checkChallenge();
     }
   }
 
@@ -1193,6 +1230,28 @@ GQ.engine = (() => {
     if (!q.chain) S().quests.push(genQuest()); // the chain refills itself via ensureQuests
     ui().markDirty('quests', 'res');
     addXp(q.reward.xp);
+  }
+
+  /* ---------- challenge runs ---------- */
+
+  function checkChallenge() {
+    const key = S().challenge;
+    if (!key) return;
+    const def = D.CHALLENGES.find(c => c.key === key);
+    if (!def) { S().challenge = null; return; }
+    const met = def.goalType === 'level'
+      ? S().hero.level >= def.goalN
+      : (S().challengeProg.bosses || 0) >= def.goalN;
+    if (!met) return;
+    S().challenge = null;
+    S().relics[def.relic.key] = true;
+    GQ.state.recalc();
+    ui().toast(`${def.relic.icon} RELIC EARNED: <b>${def.relic.name}</b> — ${def.relic.desc}`, 'gold', 6);
+    ui().log(`<b>${def.icon} ${def.name} — complete.</b> The restriction lifts. You keep ${def.relic.icon} <b>${def.relic.name}</b> (${def.relic.desc}). The run continues, unshackled.`, 'level');
+    GQ.audio.ascend();
+    if (scene()) scene().onLevelUp();
+    ui().markDirty('char', 'zones', 'zonehdr', 'records');
+    GQ.state.save();
   }
 
   /* ---------- Bureau Contracts: daily, real-time, ember-paying ---------- */
