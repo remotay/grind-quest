@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grind Quest</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div id="logo">
+      <span class="logo-sword">⚔</span>
+      <span class="logo-text">GRIND<em>QUEST</em></span>
+      <span class="logo-ver">v0.7 · The Beyond</span>
+    </div>
+    <div id="resources">
+      <div class="res" title="Gold — earned from kills and salvage"><span class="coin"></span><span id="res-gold">0</span></div>
+      <div class="res" title="Arcane Shards — salvage gear to earn, spend to enhance"><span class="shard"></span><span id="res-shards">0</span></div>
+    </div>
+    <div id="topbtns">
+      <button class="btn small gold hidden" id="btn-ascend" title="Ascension — trade this run for permanent power">🔥 0</button>
+      <button class="iconbtn" id="btn-settings" title="Settings &amp; Save">⚙</button>
+    </div>
+  </header>
+
+  <main id="layout">
+    <aside id="char-panel" class="panel">
+      <div id="hero-head">
+        <canvas id="portrait" width="76" height="76"></canvas>
+        <div id="hero-id">
+          <div id="hero-name">Adventurer</div>
+          <div id="hero-sub"><span id="hero-class">Warrior</span> · Lv <span id="hero-level">1</span></div>
+          <div id="gearscore">Power <b id="pow-val">0</b> · Gear <b id="gs-val">0</b></div>
+        </div>
+      </div>
+      <div class="bar hp" title="Health"><div class="bar-fill" id="hp-fill"></div><span class="bar-text" id="hp-text"></span></div>
+      <div class="bar xp" title="Experience"><div class="bar-fill" id="xp-fill"></div><span class="bar-text" id="xp-text"></span></div>
+      <div class="panel-title">Equipment</div>
+      <div id="paperdoll"></div>
+      <div class="panel-title">Attributes</div>
+      <div id="stat-list"></div>
+      <button class="btn gold" id="btn-talents" style="width:100%;margin-top:12px">🎯 Talents</button>
+    </aside>
+
+    <section id="battle-panel">
+      <div id="zone-header" class="panel">
+        <div id="zone-title-row">
+          <div id="zone-name" class="serif">—</div>
+          <div id="zone-danger" class="chip">—</div>
+          <div id="zone-event" class="chip hunting hidden">—</div>
+        </div>
+        <div id="zone-flavor">—</div>
+      </div>
+      <div id="scene-wrap" class="panel">
+        <canvas id="scene"></canvas>
+        <div id="buffbar"></div>
+        <div id="hotbar"></div>
+      </div>
+      <div id="log-wrap" class="panel">
+        <div class="panel-title log-title">Chronicle</div>
+        <div id="log"></div>
+      </div>
+    </section>
+
+    <aside id="right-panel" class="panel">
+      <nav id="tabs">
+        <button class="tab active" data-tab="hunt">Hunt</button>
+        <button class="tab" data-tab="inv">Bag <span id="inv-count"></span></button>
+        <button class="tab" data-tab="quests">Quests</button>
+        <button class="tab" data-tab="shop">Shop</button>
+        <button class="tab" data-tab="stats">Records</button>
+      </nav>
+      <div id="tab-hunt" class="tabpage active">
+        <div id="zone-list"></div>
+      </div>
+      <div id="tab-quests" class="tabpage">
+        <div id="quest-list"></div>
+      </div>
+      <div id="tab-shop" class="tabpage">
+        <div id="shop-list"></div>
+      </div>
+      <div id="tab-inv" class="tabpage">
+        <div id="forge-row"></div>
+        <div id="inv-controls">
+          <button class="btn small" id="btn-sort" title="Sort bag by quality">Sort</button>
+          <button class="btn small gold" id="btn-autoequip" title="Automatically equip your strongest gear">Equip Best</button>
+          <select id="salvage-tier" class="btn small" title="Break down gear for gold and shards">
+            <option value="-1">Salvage…</option>
+            <option value="0">Commons</option>
+            <option value="1">≤ Uncommon</option>
+            <option value="2">≤ Rare</option>
+          </select>
+        </div>
+        <div id="inv-grid"></div>
+      </div>
+      <div id="tab-stats" class="tabpage">
+        <div id="records"></div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<div id="tooltip" class="hidden"></div>
+<div id="toasts"></div>
+<div id="modal-root" class="hidden"></div>
+<div id="intro" class="hidden"></div>
+
+<script src="js/util.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/data.js"></script>
+<script src="js/items.js"></script>
+<script src="js/state.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/scene.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

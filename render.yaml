@@ -1,0 +1,10 @@
+services:
+  - type: web
+    runtime: static
+    name: grind-quest
+    buildCommand: ""
+    staticPublishPath: .
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
