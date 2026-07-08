@@ -960,7 +960,7 @@ GQ.data = (() => {
     { key: 'str',  name: 'Eternal Strength', icon: '⚔️', max: 999, cost: r => 4 + 3 * r,   desc: '+10% damage per rank' },
     { key: 'vig',  name: 'Eternal Vigor',    icon: '🛡️', max: 999, cost: r => 4 + 3 * r,   desc: '+10% max HP per rank' },
     { key: 'auto', name: 'Muscle Memory',    icon: '🤖', max: 1,  cost: () => 15,         desc: 'Abilities cast themselves' },
-    { key: 'head', name: 'Head Start',       icon: '🚀', max: 4,  cost: r => 10 + 15 * r, desc: 'Begin each life 5 levels higher' },
+    { key: 'head', name: 'Head Start',       icon: '🚀', max: 4,  cost: r => 10 + 15 * r, desc: 'Begin each life 5 levels higher (challenge runs excluded)' },
     { key: 'gold', name: 'Deep Pockets',     icon: '💰', max: 10, cost: r => 3 + 2 * r,   desc: '+25% gold per rank' },
     { key: 'xp',   name: 'Scholar',          icon: '📚', max: 10, cost: r => 4 + 3 * r,   desc: '+10% XP per rank' },
     { key: 'loot', name: 'Lodestone',        icon: '🧲', max: 10, cost: r => 4 + 3 * r,   desc: '+10% loot find per rank' },
@@ -970,7 +970,7 @@ GQ.data = (() => {
     { key: 'crit',   name: 'Killer Instinct',icon: '🎯', max: 5,  cost: r => 4 + 3 * r,   desc: '+3% crit chance per rank' },
     { key: 'forge',  name: 'Trade License',  icon: '📦', max: 3,  cost: r => 4 + 3 * r,   desc: 'Forge crates 15% cheaper per rank' },
   ];
-  const ASC_MIN_LEVEL = 15;
+  const ASC_MIN_LEVEL = 50;
   function emberGain(level, bossesConquered, spireConquered) {
     if (level < ASC_MIN_LEVEL) return 0;
     return Math.floor(Math.pow(level, 1.5) / 6) + 4 * bossesConquered + 10 * (spireConquered || 0);

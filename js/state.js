@@ -279,7 +279,8 @@ GQ.state = (() => {
     S.asc.lifetime += gain;
     const eq = {};
     for (const k of D.SLOT_KEYS) eq[k] = null;
-    S.hero.level = 1 + 5 * (S.asc.up.head || 0);
+    // challenge runs start from nothing — Head Start would trivialize their goals
+    S.hero.level = challengeKey ? 1 : 1 + 5 * (S.asc.up.head || 0);
     S.hero.xp = 0;
     S.hero.gold = 0;
     S.hero.shards = 0;

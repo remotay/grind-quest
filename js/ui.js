@@ -244,6 +244,7 @@ GQ.ui = (() => {
     const nextTier = D.TALENT_TIERS.find((t, ti) => L < t.lvl);
     if (nextTier) items.push(`🎯 talent at <b>Lv ${nextTier.lvl}</b>`);
     if (L < 40) items.push('🔱 ultimate at <b>Lv 40</b>');
+    if (S().asc.count === 0 && L >= 25 && L < D.ASC_MIN_LEVEL) items.push(`🔥 Ascension at <b>Lv ${D.ASC_MIN_LEVEL}</b>`);
     if (!GQ.engine.depthsUnlocked() && L >= 45) items.push('🌌 the Beyond: <b>fell the Unraveled King</b>');
     const uni = D.UNIQUES[zid];
     if (uni && !S().stats.uniquesFound[uni.key]) items.push(`✧ <b>${uni.name}</b> hides here`);
@@ -266,9 +267,16 @@ GQ.ui = (() => {
 
   function updateAscendButton() {
     const a = S().asc;
-    const show = S().hero.level >= D.ASC_MIN_LEVEL || a.count > 0 || a.embers > 0;
-    el['btn-ascend'].classList.toggle('hidden', !show);
-    if (show) el['btn-ascend'].innerHTML = `🔥 ${U.fmt(a.embers)}`;
+    const unlocked = S().hero.level >= D.ASC_MIN_LEVEL || a.count > 0 || a.embers > 0;
+    const tease = S().hero.level >= 25; // let players see the fire before they can touch it
+    el['btn-ascend'].classList.toggle('hidden', !(unlocked || tease));
+    if (unlocked) {
+      el['btn-ascend'].innerHTML = `🔥 ${U.fmt(a.embers)}`;
+      el['btn-ascend'].title = 'Ascension — trade this run for permanent power';
+    } else if (tease) {
+      el['btn-ascend'].innerHTML = `🔥 Lv ${D.ASC_MIN_LEVEL}`;
+      el['btn-ascend'].title = `Ascension unlocks at level ${D.ASC_MIN_LEVEL}`;
+    }
   }
 
   function updateBars() {
@@ -1319,7 +1327,7 @@ GQ.ui = (() => {
       btn.onclick = () => {
         const ch = D.CHALLENGES.find(c => c.key === btn.dataset.ch);
         confirmModal(
-          `Ascend into <b>${ch.icon} ${ch.name}</b> for <b style="color:#ff9a5a">+${gain} Soul Embers</b>?<br><br>${ch.desc} The restriction holds until you ${ch.goal.toLowerCase()} — then it lifts and <b>${ch.relic.name}</b> (${ch.relic.desc}) is yours for good.`,
+          `Ascend into <b>${ch.icon} ${ch.name}</b> for <b style="color:#ff9a5a">+${gain} Soul Embers</b>?<br><br>${ch.desc} The restriction holds until you ${ch.goal.toLowerCase()} — then it lifts and <b>${ch.relic.name}</b> (${ch.relic.desc}) is yours for good.<br><br><span style="color:var(--faint);font-size:11.5px">Challenge runs start at level 1 — Head Start does not apply.</span>`,
           () => performAscension(ch.key));
       };
     });
