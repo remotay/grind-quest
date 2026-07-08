@@ -190,6 +190,23 @@ GQ.items = (() => {
     return sv;
   }
 
+  // salvage the whole bag; uniques and set pieces are spared
+  function salvageAll() {
+    const inv = S().hero.inventory;
+    let gold = 0, shards = 0, count = 0, kept = 0;
+    for (let i = inv.length - 1; i >= 0; i--) {
+      const it = inv[i];
+      if (it.rar >= 6 || it.set) { kept++; continue; }
+      const sv = salvageValue(it);
+      inv.splice(i, 1);
+      grantSalvage(sv);
+      gold += sv.gold; shards += sv.shards; count++;
+    }
+    if (count && GQ.engine) GQ.engine.questEvent('salvage', count);
+    dirty('inv', 'res');
+    return { gold, shards, count, kept };
+  }
+
   // salvage everything at or below maxRar; returns totals
   function salvageTier(maxRar) {
     const inv = S().hero.inventory;
@@ -315,6 +332,6 @@ GQ.items = (() => {
   return {
     generateItem, generateUnique, generateSetPiece, rollRarity, effStats, enhMult, gearScore,
     salvageValue, enhanceCost, forge, forgeCost, temper, temperCost,
-    equip, unequip, salvageInv, salvageTier, enhance, sortInv, autoEquip,
+    equip, unequip, salvageInv, salvageTier, salvageAll, enhance, sortInv, autoEquip,
   };
 })();

@@ -89,6 +89,19 @@ GQ.ui = (() => {
     el['btn-ascend'].addEventListener('click', ascensionModal);
 
     $('btn-sort').addEventListener('click', () => { GQ.items.sortInv(); });
+    $('btn-salvage-all').addEventListener('click', () => {
+      const inv = S().hero.inventory;
+      const eligible = inv.filter(i => i.rar < 6 && !i.set).length;
+      if (!eligible) { log('Nothing to salvage. Your bag is all keepers (or empty).', 'sys'); return; }
+      const protectedN = inv.length - eligible;
+      confirmModal(
+        `Salvage <b>${eligible}</b> item${eligible > 1 ? 's' : ''}?${protectedN ? ` (${protectedN} unique/set piece${protectedN > 1 ? 's' : ''} will be kept.)` : ''}`,
+        () => {
+          const r = GQ.items.salvageAll();
+          log(`<b>Salvaged the bag:</b> ${r.count} items → <b style="color:var(--gold)">${U.fmt(r.gold)} gold</b> and <b style="color:#bda1ff">${r.shards} shards</b>${r.kept ? ` (${r.kept} kept)` : ''}.`, 'sys');
+          GQ.audio.coin();
+        });
+    });
     $('btn-autoequip').addEventListener('click', () => {
       const n = GQ.items.autoEquip();
       log(n > 0 ? `Equipped ${n} upgrade${n > 1 ? 's' : ''}.` : 'No upgrades in your bag.', 'sys');
@@ -472,13 +485,17 @@ GQ.ui = (() => {
       if (z.sealed && !GQ.engine.zoneOpen(z)) {
         card.classList.add('sealedcard');
         card.classList.remove('active', 'side');
+        const gateText = z.sealed === 'throne'
+          ? 'The Ascendant Spire ignores you while a god still holds the Throne.'
+          : 'Beyond the Rift. The seal holds while the Unraveled King still stands.';
         card.innerHTML = `
           <div class="zc-top">
             <span class="zc-lv">Lv ${z.level}</span>
-            <span class="zc-name">${z.name}</span>
+            <span class="zc-name">${z.sealed === 'throne' ? '🗼 ' : ''}${z.name}</span>
             <span class="chip trivial">🔒 Sealed</span>
           </div>
-          <div class="zc-flavor">Beyond the Rift. The seal holds while the Unraveled King still stands.</div>`;
+          <div class="zc-flavor">${gateText}</div>
+          ${z.gimmick ? `<div class="zc-gimmick">${z.gimmick.desc}</div>` : ''}`;
         continue;
       }
       card.classList.remove('sealedcard');

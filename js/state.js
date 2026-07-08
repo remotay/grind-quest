@@ -258,7 +258,9 @@ GQ.state = (() => {
 
   function emberPreview() {
     const kindle = 1 + 0.10 * ((api.S.asc.up.kindle) || 0);
-    return Math.round(D.emberGain(api.S.hero.level, conqueredCount()) * kindle);
+    const bk = api.S.boss.kills || {};
+    const spire = D.ZONES.filter(z => z.sealed === 'throne' && bk[z.id] > 0).length;
+    return Math.round(D.emberGain(api.S.hero.level, conqueredCount(), spire) * kindle);
   }
 
   function offlineCap() {

@@ -41,8 +41,12 @@ GQ.engine = (() => {
   }
 
   function depthsUnlocked() { return (S().boss.kills.rift || 0) > 0; }
-  // the Beyond opens when the Rift's master falls
-  function zoneOpen(z) { return !z.sealed || depthsUnlocked(); }
+  // gates: the Beyond opens when the Rift's master falls; the Spire when the Last God does
+  function zoneOpen(z) {
+    if (!z.sealed) return true;
+    if (z.sealed === 'throne') return (S().boss.kills.throne || 0) > 0;
+    return depthsUnlocked();
+  }
 
   // anomalies: a temporary place borrowing its host's fauna, 3 levels up
   function anomalyZone() {
@@ -164,7 +168,7 @@ GQ.engine = (() => {
       sp, elite, trial: inTrial,
       name: (elite ? 'Elite ' : '') + sp.name,
       hp: hpMax, hpMax,
-      dmg: D.BAL.monsterDmg(z.level) * sp.dmg * (elite ? D.BAL.eliteDmg : 1) * (em.mdmg || 1),
+      dmg: D.BAL.monsterDmg(z.level) * sp.dmg * (elite ? D.BAL.eliteDmg : 1) * (em.mdmg || 1) * (gm.mdmgM || 1),
       atkInt: D.BAL.monsterAtkInterval / (em.matk || 1),
       xp: D.BAL.xpKill(z.level) * sp.xp * (elite ? D.BAL.eliteXp : 1),
       gold: D.BAL.goldKill(z.level) * sp.gold * (elite ? D.BAL.eliteGold : 1),
@@ -628,6 +632,10 @@ GQ.engine = (() => {
         ui().log('<b>The Depths are open.</b> Below the Rift, the grind continues. Look at the bottom of your zone list.', 'sys');
         ui().toast('🌌 The seal is broken. Four lands beyond the Rift are open.', 'gold', 6);
         ui().log('<b>🌌 The Beyond unseals.</b> The Far Shore, the Clockwork Waste, the Garden of Teeth, and a Throne that should not still hum.', 'level');
+      }
+      if (bz === 'throne') {
+        ui().toast('🗼 THE ASCENDANT SPIRE APPEARS. Corruption doubles every floor. Bring lifetimes.', 'gold', 7);
+        ui().log('<b>🗼 The Ascendant Spire tears upward through everything.</b> Six floors of stacking Corruption. Gear will not carry you up there — ascensions will. Spire bosses pay 10 embers each.', 'level');
       }
       if (GQ.state.conqueredCount() >= Object.keys(D.BOSSES).length) {
         ui().completionModal();
@@ -1371,7 +1379,7 @@ GQ.engine = (() => {
     // elites are part of the average diet (events can flood the menu)
     const eliteC = Math.min(0.6, D.BAL.eliteChance * (em.elite || 1));
     hpAvg *= (1 + eliteC * (D.BAL.eliteHp - 1)) * (zg.hpM || 1);
-    dmgAvg *= (1 + eliteC * (D.BAL.eliteDmg - 1)) * (em.mdmg || 1);
+    dmgAvg *= (1 + eliteC * (D.BAL.eliteDmg - 1)) * (em.mdmg || 1) * (zg.mdmgM || 1);
     xpAvg *= (1 + eliteC * (D.BAL.eliteXp - 1)) * (em.xp || 1) * (zg.xpM || 1);
     goldAvg *= (1 + eliteC * (D.BAL.eliteGold - 1)) * (em.gold || 1) * (zg.goldM || 1);
 

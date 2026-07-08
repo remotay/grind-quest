@@ -377,6 +377,73 @@ GQ.data = (() => {
         { name: 'Zealot of Nothing', shape: 'humanoid', hue: 280, size: 1.0,  hp: 1.0,  dmg: 1.2,  xp: 1.1,  gold: 1.1 },
       ],
     },
+    /* ---- The Ascendant Spire: corruption outruns any single run ---- */
+    {
+      id: 'stair', name: 'The Hollow Stair', level: 110, props: 'temple', sealed: 'throne',
+      flavor: 'The Spire\'s welcome mat. Every step is numbered. The numbers are wrong on purpose.',
+      gimmick: { hpM: 2, mdmgM: 1.35, xpM: 1.5, goldM: 1.4, desc: '☠ Corruption I — ×2 HP · +35% damage · +50% XP' },
+      pal: { skyTop: '#1a1626', skyBot: '#3a3050', ground: '#2a2440', prop: '#141020', accent: '#b0a0e0', ambient: 'motes', ambColor: '#b0a0e0' },
+      monsters: [
+        { name: 'Stairwell Haunt', shape: 'wisp',    hue: 260, size: 0.9,  hp: 0.85, dmg: 1.15, xp: 1.15, gold: 1.0 },
+        { name: 'Banister Wyrm',   shape: 'serpent', hue: 275, size: 1.1,  hp: 1.15, dmg: 1.1,  xp: 1.1,  gold: 1.05 },
+        { name: 'Step Counter',    shape: 'golem',   hue: 250, size: 1.2,  hp: 1.4,  dmg: 1.0,  xp: 1.25, gold: 1.1 },
+      ],
+    },
+    {
+      id: 'choir', name: 'The Choir Loft', level: 122, props: 'temple', sealed: 'throne',
+      flavor: 'The music never stopped. The musicians did. Attendance is mandatory.',
+      gimmick: { hpM: 4, mdmgM: 1.82, xpM: 2.25, goldM: 1.96, desc: '☠ Corruption II — ×4 HP · +82% damage · +125% XP' },
+      pal: { skyTop: '#241a30', skyBot: '#503a60', ground: '#362a4a', prop: '#1a1226', accent: '#e0b0f0', ambient: 'motes', ambColor: '#e0b0f0' },
+      monsters: [
+        { name: 'Hymn Leech',    shape: 'bat',   hue: 290, size: 0.85, hp: 0.8,  dmg: 1.2,  xp: 1.1,  gold: 1.0 },
+        { name: 'Descant Shade', shape: 'wisp',  hue: 300, size: 0.95, hp: 0.9,  dmg: 1.15, xp: 1.2,  gold: 1.05 },
+        { name: 'Organ Golem',   shape: 'golem', hue: 280, size: 1.3,  hp: 1.5,  dmg: 1.05, xp: 1.3,  gold: 1.15 },
+      ],
+    },
+    {
+      id: 'archive', name: 'The Molten Archive', level: 134, props: 'cavern', sealed: 'throne',
+      flavor: 'Every record of every grind, filed in fire. Yours has a bookmark in it.',
+      gimmick: { hpM: 8, mdmgM: 2.46, xpM: 3.4, goldM: 2.74, desc: '☠ Corruption III — ×8 HP · +146% damage · +240% XP' },
+      pal: { skyTop: '#2a1a14', skyBot: '#6a3a20', ground: '#442a18', prop: '#200f08', accent: '#ffb060', ambient: 'embers', ambColor: '#ffb060' },
+      monsters: [
+        { name: 'Burning Index', shape: 'wisp',     hue: 30, size: 0.9,  hp: 0.85, dmg: 1.2,  xp: 1.2,  gold: 1.1 },
+        { name: 'Vault Cinder',  shape: 'golem',    hue: 20, size: 1.25, hp: 1.45, dmg: 1.05, xp: 1.25, gold: 1.15 },
+        { name: 'Redacted One',  shape: 'humanoid', hue: 15, size: 1.0,  hp: 1.0,  dmg: 1.2,  xp: 1.15, gold: 1.05 },
+      ],
+    },
+    {
+      id: 'terrace', name: 'The Starless Terrace', level: 148, props: 'forest', sealed: 'throne',
+      flavor: 'A garden planted where the sky used to be. Nothing up here casts a shadow. Including you, now.',
+      gimmick: { hpM: 16, mdmgM: 3.32, xpM: 5.1, goldM: 3.84, desc: '☠ Corruption IV — ×16 HP · +232% damage · +410% XP' },
+      pal: { skyTop: '#05050c', skyBot: '#12121f', ground: '#0c0c16', prop: '#1c1c2e', accent: '#8090c0', ambient: 'void', ambColor: '#8090c0' },
+      monsters: [
+        { name: 'Absence',        shape: 'wisp',     hue: 230, size: 1.0,  hp: 0.9,  dmg: 1.25, xp: 1.2,  gold: 1.0 },
+        { name: 'Night Gardener', shape: 'humanoid', hue: 220, size: 1.05, hp: 1.05, dmg: 1.15, xp: 1.15, gold: 1.1 },
+        { name: 'Unlit Beast',    shape: 'beast',    hue: 240, size: 1.15, hp: 1.3,  dmg: 1.1,  xp: 1.25, gold: 1.05 },
+      ],
+    },
+    {
+      id: 'crown', name: 'The Crown of Echoes', level: 163, props: 'rift', sealed: 'throne',
+      flavor: 'Everyone who almost made it is still here, practicing their acceptance speech.',
+      gimmick: { hpM: 32, mdmgM: 4.48, xpM: 7.6, goldM: 5.38, desc: '☠ Corruption V — ×32 HP · +348% damage · +660% XP' },
+      pal: { skyTop: '#201430', skyBot: '#5a3a70', ground: '#3a2850', prop: '#160c24', accent: '#f0d0ff', ambient: 'void', ambColor: '#f0d0ff' },
+      monsters: [
+        { name: 'Echo of You',      shape: 'humanoid', hue: 210, size: 1.0,  hp: 1.0,  dmg: 1.25, xp: 1.2,  gold: 1.1 },
+        { name: 'Applause',         shape: 'spider',   hue: 310, size: 1.1,  hp: 1.1,  dmg: 1.2,  xp: 1.15, gold: 1.05 },
+        { name: 'Coronation Wight', shape: 'humanoid', hue: 285, size: 1.1,  hp: 1.2,  dmg: 1.15, xp: 1.25, gold: 1.15 },
+      ],
+    },
+    {
+      id: 'apex', name: 'The Apex of the Grind', level: 180, props: 'rift', sealed: 'throne',
+      flavor: 'The top. There is another top above it. There always is. That is the whole point.',
+      gimmick: { hpM: 64, mdmgM: 6.05, xpM: 11.4, goldM: 7.53, desc: '☠ Corruption VI — ×64 HP · +505% damage · +1040% XP' },
+      pal: { skyTop: '#100c18', skyBot: '#40355a', ground: '#241e38', prop: '#4a3f68', accent: '#ffe8b0', ambient: 'void', ambColor: '#ffe8b0' },
+      monsters: [
+        { name: 'The Almost',       shape: 'wisp',  hue: 48,  size: 1.05, hp: 0.95, dmg: 1.25, xp: 1.2,  gold: 1.1 },
+        { name: 'Final Draft',      shape: 'golem', hue: 42,  size: 1.3,  hp: 1.45, dmg: 1.1,  xp: 1.3,  gold: 1.2 },
+        { name: 'Grindstone Avatar', shape: 'golem', hue: 55, size: 1.2,  hp: 1.2,  dmg: 1.2,  xp: 1.25, gold: 1.15 },
+      ],
+    },
   ];
   const ZONE_BY_ID = {};
   for (const z of ZONES) ZONE_BY_ID[z.id] = z;
@@ -390,7 +457,8 @@ GQ.data = (() => {
   }
 
   // what a well-geared hero of the zone's level is worth, as one number;
-  // shown as "Recommended Power" and used for over-your-head warnings
+  // shown as "Recommended Power" and used for over-your-head warnings.
+  // Corrupted and gimmicked zones demand proportionally more.
   function refPower(z) {
     const atk = BAL.heroAtk(z.level) * 2.4;
     const dps = atk * BAL.heroBaseRate * 1.18;
@@ -398,7 +466,9 @@ GQ.data = (() => {
     const armor = 22 * P(z.level);
     const dr = armor / (armor + BAL.armorK(z.level));
     const ehp = hp * (1 + dr) + hp * 0.025 * 10;
-    return dps * Math.pow(ehp, 0.45);
+    const g = z.gimmick || {};
+    const demand = ((g.hpM || 1) / (g.dmgM || 1)) * Math.pow(g.mdmgM || 1, 0.45);
+    return dps * Math.pow(ehp, 0.45) * demand;
   }
 
   function masteryTierCount(kills) {
@@ -460,6 +530,24 @@ GQ.data = (() => {
     throne: { key: 'quietcrown', name: 'Crown of the Quiet', slot: 'helm',
       flavor: 'Heavy. Getting lighter.',
       stats: [{ k: 'atkPct', r: [12, 16] }, { k: 'hpPct', r: [12, 16] }, { k: 'xp', r: [12, 18] }] },
+    stair: { key: 'keyring', name: "Landlord's Keyring", slot: 'ring',
+      flavor: 'Opens every door you have already paid for.',
+      stats: [{ k: 'gold', r: [18, 26] }, { k: 'loot', r: [12, 16] }, { k: 'haste', r: [8, 12] }] },
+    choir: { key: 'pitch', name: 'Perfect Pitch', slot: 'amulet',
+      flavor: 'The one note the choir never found.',
+      stats: [{ k: 'crit', r: [7, 10] }, { k: 'critDmg', r: [35, 50] }, { k: 'xp', r: [10, 14] }] },
+    archive: { key: 'librarycard', name: 'Library Card (Revoked)', slot: 'offhand',
+      flavor: 'Revoked for knowing too much. It still works.',
+      stats: [{ k: 'atkPct', r: [14, 18] }, { k: 'xp', r: [12, 16] }, { k: 'loot', r: [10, 14] }] },
+    terrace: { key: 'nightgloves', name: 'Gloves of the Night Gardener', slot: 'gloves',
+      flavor: 'They prune what should not have grown. Broad mandate.',
+      stats: [{ k: 'atkFlat', c: 7 }, { k: 'crit', r: [6, 9] }, { k: 'regen', r: [1.5, 2.2] }] },
+    crown: { key: 'encore', name: 'Encore Steppers', slot: 'boots',
+      flavor: 'They only know how to walk back on stage.',
+      stats: [{ k: 'haste', r: [12, 16] }, { k: 'atkPct', r: [10, 14] }, { k: 'gold', r: [14, 20] }] },
+    apex: { key: 'wholepoint', name: 'The Whole Point', slot: 'weapon',
+      flavor: 'You climbed all this way. It was in your hand the entire time.',
+      stats: [{ k: 'atkFlat', c: 10 }, { k: 'crit', r: [8, 11] }, { k: 'critDmg', r: [40, 60] }, { k: 'xp', r: [12, 16] }] },
   };
 
   // challenge runs: ascend into a restriction, earn a permanent Relic
@@ -587,6 +675,21 @@ GQ.data = (() => {
       { key: 'immortal',     name: 'Immortal',      icon: '♾️', desc: '+30% max HP and +1%/s regeneration', mods: { hp: 30, regen: 1 } },
       { key: 'transcendent', name: 'Transcendent',  icon: '🌌', desc: '+20% XP', mods: { xp: 20 } },
     ]},
+    { lvl: 85, picks: [
+      { key: 'annihilator',  name: 'Annihilator',   icon: '💣', desc: '+20% damage', mods: { dmg: 20 } },
+      { key: 'bastion',      name: 'Bastion',       icon: '🏯', desc: '+25% max HP and +15% armor', mods: { hp: 25, armor: 15 } },
+      { key: 'harvest',      name: 'Harvest',       icon: '🌾', desc: '+20% gold and +15% loot find', mods: { gold: 20, loot: 15 } },
+    ]},
+    { lvl: 100, picks: [
+      { key: 'edge',         name: "Executioner's Edge", icon: '🔪', desc: '+10% crit chance, +30% crit damage', mods: { crit: 10, critDmg: 30 } },
+      { key: 'eternal',      name: 'Eternal',       icon: '🕰️', desc: '+25% max HP and +1.5%/s regeneration', mods: { hp: 25, regen: 1.5 } },
+      { key: 'enlightened',  name: 'Enlightened',   icon: '💡', desc: '+25% XP', mods: { xp: 25 } },
+    ]},
+    { lvl: 120, picks: [
+      { key: 'apexpred',     name: 'Apex Predator', icon: '🦖', desc: '+30% damage', mods: { dmg: 30 } },
+      { key: 'immovable',    name: 'Immovable',     icon: '⛰️', desc: '+40% max HP', mods: { hp: 40 } },
+      { key: 'omniscient',   name: 'Omniscient',    icon: '🔭', desc: '+30% XP and +10% loot find', mods: { xp: 30, loot: 10 } },
+    ]},
   ];
 
   // roaming world events: one zone at a time, five minutes of reasons to travel
@@ -656,6 +759,24 @@ GQ.data = (() => {
     'Prayer Echo': 'A request still bouncing off an empty chair.',
     'Broken Halo': 'Heavy is the head. Heavier is what fell off it.',
     'Zealot of Nothing': 'Believes in nothing. Militantly.',
+    'Stairwell Haunt': 'Died on step four hundred. Warns no one.',
+    'Banister Wyrm': 'Do not slide down it. It slides back.',
+    'Step Counter': 'It knows exactly how many steps you skipped.',
+    'Hymn Leech': 'Feeds on the high notes. Leaves the dirges.',
+    'Descant Shade': 'Harmonizes with your breathing. Stop noticing.',
+    'Organ Golem': 'Every pipe is a throat. Every throat remembers.',
+    'Burning Index': 'Knows where everything is filed. Files you under P, for Pending.',
+    'Vault Cinder': 'What remains of the reading room. Still shushing.',
+    'Redacted One': 'Its name is ██████. It is very proud of that.',
+    'Absence': 'Not nothing. Worse. Almost something.',
+    'Night Gardener': 'Waters the dark. The dark is thriving.',
+    'Unlit Beast': 'You hear the shadow. The shadow hears you first.',
+    'Echo of You': 'Made every choice you made, one second later. Resents it.',
+    'Applause': 'Eight hands. You can guess what it does. You will hate it.',
+    'Coronation Wight': 'Crowned seconds before the end. Counts it.',
+    'The Almost': 'Ninety-nine percent of the way to being real.',
+    'Final Draft': 'Version 847. No further notes. Still not done.',
+    'Grindstone Avatar': 'The grind, given hands. It was always going to come to this.',
   };
 
   // authored onboarding: consumed in order before random quests begin
@@ -684,6 +805,12 @@ GQ.data = (() => {
     clockwork: { name: 'The Horologist', shape: 'golem',    hue: 42,  size: 2.1, title: 'Still Winding the World. Wrong Direction.' },
     garden:    { name: 'Mother Thorn',   shape: 'spider',   hue: 330, size: 2.2, title: 'The Garden Grows Where She Smiles' },
     throne:    { name: 'The Last God',   shape: 'wisp',     hue: 268, size: 2.4, title: 'Was Promised Worship. Got You.' },
+    stair:     { name: 'The Landlord',      shape: 'humanoid', hue: 255, size: 2.0, title: 'Rent Is Due, Ascending' },
+    choir:     { name: 'The Conductor',     shape: 'humanoid', hue: 295, size: 2.0, title: 'Demands an Encore. Always.' },
+    archive:   { name: 'The Head Librarian', shape: 'golem',   hue: 25,  size: 2.2, title: 'Everything Is Overdue' },
+    terrace:   { name: 'Midnight Unending', shape: 'wisp',     hue: 232, size: 2.3, title: 'The Last Lamp Went First' },
+    crown:     { name: 'The Understudy',    shape: 'humanoid', hue: 288, size: 2.1, title: 'Your Role, Perfected' },
+    apex:      { name: 'The Grind Itself',  shape: 'golem',    hue: 50,  size: 2.5, title: 'It Was Never Going to End' },
   };
 
   // three active abilities per class
@@ -710,13 +837,13 @@ GQ.data = (() => {
 
   // permanent upgrades bought with Soul Embers
   const ASC_UPGRADES = [
-    { key: 'str',  name: 'Eternal Strength', icon: '⚔️', max: 10, cost: r => 4 + 3 * r,   desc: '+10% damage per rank' },
-    { key: 'vig',  name: 'Eternal Vigor',    icon: '🛡️', max: 10, cost: r => 4 + 3 * r,   desc: '+10% max HP per rank' },
+    { key: 'str',  name: 'Eternal Strength', icon: '⚔️', max: 25, cost: r => 4 + 3 * r,   desc: '+10% damage per rank' },
+    { key: 'vig',  name: 'Eternal Vigor',    icon: '🛡️', max: 25, cost: r => 4 + 3 * r,   desc: '+10% max HP per rank' },
     { key: 'auto', name: 'Muscle Memory',    icon: '🤖', max: 1,  cost: () => 15,         desc: 'Abilities cast themselves' },
-    { key: 'head', name: 'Head Start',       icon: '🚀', max: 2,  cost: r => 10 + 15 * r, desc: 'Begin each life 5 levels higher' },
-    { key: 'gold', name: 'Deep Pockets',     icon: '💰', max: 5,  cost: r => 3 + 2 * r,   desc: '+25% gold per rank' },
-    { key: 'xp',   name: 'Scholar',          icon: '📚', max: 5,  cost: r => 4 + 3 * r,   desc: '+10% XP per rank' },
-    { key: 'loot', name: 'Lodestone',        icon: '🧲', max: 5,  cost: r => 4 + 3 * r,   desc: '+10% loot find per rank' },
+    { key: 'head', name: 'Head Start',       icon: '🚀', max: 4,  cost: r => 10 + 15 * r, desc: 'Begin each life 5 levels higher' },
+    { key: 'gold', name: 'Deep Pockets',     icon: '💰', max: 10, cost: r => 3 + 2 * r,   desc: '+25% gold per rank' },
+    { key: 'xp',   name: 'Scholar',          icon: '📚', max: 10, cost: r => 4 + 3 * r,   desc: '+10% XP per rank' },
+    { key: 'loot', name: 'Lodestone',        icon: '🧲', max: 10, cost: r => 4 + 3 * r,   desc: '+10% loot find per rank' },
     { key: 'rec',  name: 'Stubborn',         icon: '⏱️', max: 3,  cost: r => 3 + 2 * r,   desc: 'KO recovery 4s shorter per rank' },
     { key: 'offcap', name: 'Night Shift',    icon: '🌙', max: 4,  cost: r => 6 + 4 * r,   desc: '+2h offline progress cap per rank' },
     { key: 'kindle', name: 'Kindling',       icon: '🕯️', max: 5,  cost: r => 5 + 5 * r,   desc: '+10% Soul Embers from ascending per rank' },
@@ -724,9 +851,9 @@ GQ.data = (() => {
     { key: 'forge',  name: 'Trade License',  icon: '📦', max: 3,  cost: r => 4 + 3 * r,   desc: 'Forge crates 15% cheaper per rank' },
   ];
   const ASC_MIN_LEVEL = 15;
-  function emberGain(level, bossesConquered) {
+  function emberGain(level, bossesConquered, spireConquered) {
     if (level < ASC_MIN_LEVEL) return 0;
-    return Math.floor(Math.pow(level, 1.5) / 6) + 4 * bossesConquered;
+    return Math.floor(Math.pow(level, 1.5) / 6) + 4 * bossesConquered + 10 * (spireConquered || 0);
   }
 
   const FORGE_TIERS = [
@@ -848,6 +975,14 @@ GQ.data = (() => {
     { key: 'relic6',   name: 'Collector of Scars', desc: 'Earn all six Relics',          check: s => Object.keys(s.relics || {}).length >= 6, reward: { shards: 400 } },
     { key: 'nm1',      name: 'Bad Dreams',         desc: 'Defeat a Nightmare boss',      check: s => Object.keys((s.boss && s.boss.nightmares) || {}).length >= 1,  reward: { shards: 60 } },
     { key: 'nm14',     name: 'Lucid',              desc: 'Defeat every Nightmare boss',  check: s => Object.keys((s.boss && s.boss.nightmares) || {}).length >= 14, reward: { shards: 400 } },
+    { key: 'spire1',   name: 'Foot on the Stair',  desc: 'Slay a monster in the Ascendant Spire',
+      check: s => ['stair', 'choir', 'archive', 'terrace', 'crown', 'apex'].some(z => (s.stats.killsByZone[z] || 0) > 0), reward: { shards: 100 } },
+    { key: 'apex',     name: 'The Whole Point',    desc: 'Conquer The Grind Itself',
+      check: s => ((s.boss && s.boss.kills.apex) || 0) >= 1, reward: { shards: 1000 } },
+    { key: 'lvl150',   name: 'Positively Ancient', desc: 'Reach level 150',
+      check: s => s.hero.level >= 150, reward: { shards: 400 } },
+    { key: 'asc10',    name: 'Habitual',           desc: 'Ascend 10 times',
+      check: s => (s.asc.count || 0) >= 10, reward: { shards: 300 } },
   ];
 
   const TIPS = [
@@ -885,6 +1020,8 @@ GQ.data = (() => {
     'Tip: challenge runs are ascensions with a handicap and a Relic at the end. Scars are permanent stats.',
     'Tip: a conquered boss returns as a Nightmare. Better loot, worse temper, +2% damage forever for the first kill.',
     'Tip: titles are earned, worn, and legally binding. Click your name.',
+    'Tip: the Spire\'s Corruption doubles monster HP every floor. Gear will not save you. Ascension will.',
+    'Tip: Spire bosses pay 10 Soul Embers each when you ascend. The Spire respects investors.',
   ];
 
   return {
