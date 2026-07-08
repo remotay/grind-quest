@@ -82,6 +82,17 @@ GQ.data = (() => {
     nightmareDmgPerFirst: 0.02,          // permanent damage per first nightmare kill
     nightmareSetChance: 0.6,
     nightmareUniqueChance: 0.2,
+    sectorKills: 40,                     // Deep Space: kills per sector
+    sectorStep: 12,                      // levels per sector
+    sectorBase: 296,                     // sector 1 sits just past the Static
+    sectorHpBase: 4096,                  // corruption continues, gentler slope
+    sectorHpGrow: 1.5,
+    sectorDmgBase: 36.6,
+    sectorDmgGrow: 1.15,
+    sectorXpBase: 130,
+    sectorXpGrow: 1.35,
+    sectorGoldBase: 56.7,
+    sectorGoldGrow: 1.3,
   };
 
   const RARITIES = [
@@ -444,6 +455,73 @@ GQ.data = (() => {
         { name: 'Grindstone Avatar', shape: 'golem', hue: 55, size: 1.2,  hp: 1.2,  dmg: 1.2,  xp: 1.25, gold: 1.15 },
       ],
     },
+    /* ---- The Firmament: the grind leaves the planet ---- */
+    {
+      id: 'scaffold', name: 'The Launch Scaffold', level: 196, props: 'space', sealed: 'apex',
+      flavor: 'Someone built stairs past the top of the Spire. Then rockets. Then quit reading the safety manual.',
+      gimmick: { hpM: 128, mdmgM: 8.2, xpM: 17, goldM: 10.5, desc: '☠ Corruption VII — ×128 HP · ×8.2 damage · ×17 XP' },
+      pal: { skyTop: '#0a0e1c', skyBot: '#1c2438', ground: '#2a2c38', prop: '#10141f', accent: '#ffd080', ambient: 'stars', ambColor: '#cfe0ff' },
+      monsters: [
+        { name: 'Countdown Sprite', shape: 'wisp',  hue: 45,  size: 0.9,  hp: 0.85, dmg: 1.15, xp: 1.15, gold: 1.0 },
+        { name: 'Gantry Mimic',     shape: 'mech',  hue: 210, size: 1.15, hp: 1.3,  dmg: 1.05, xp: 1.2,  gold: 1.15 },
+        { name: 'Fuel Ghast',       shape: 'squid', hue: 140, size: 1.0,  hp: 0.95, dmg: 1.2,  xp: 1.1,  gold: 1.05 },
+      ],
+    },
+    {
+      id: 'orbit', name: 'Low Orbit', level: 214, props: 'space', sealed: 'apex',
+      flavor: 'The world from up here: small, round, still owing you gold.',
+      gimmick: { hpM: 256, mdmgM: 11, xpM: 25.6, goldM: 14.8, desc: '☠ Corruption VIII — ×256 HP · ×11 damage · ×25 XP' },
+      pal: { skyTop: '#05070f', skyBot: '#101a2e', ground: '#1a2030', prop: '#0a0e18', accent: '#80c0ff', ambient: 'stars', ambColor: '#e0f0ff' },
+      monsters: [
+        { name: 'Debris Halo',     shape: 'crystal', hue: 195, size: 1.0,  hp: 1.0,  dmg: 1.1,  xp: 1.1,  gold: 1.1 },
+        { name: 'Orbital Watcher', shape: 'eye',     hue: 265, size: 1.05, hp: 0.95, dmg: 1.25, xp: 1.2,  gold: 1.0 },
+        { name: 'Vacuum Leech',    shape: 'squid',   hue: 175, size: 0.95, hp: 0.9,  dmg: 1.15, xp: 1.1,  gold: 1.05 },
+      ],
+    },
+    {
+      id: 'belt', name: 'The Asteroid Choir', level: 233, props: 'asteroid', sealed: 'apex',
+      flavor: 'A billion rocks, all humming the same note. It is not a nice note.',
+      gimmick: { hpM: 512, mdmgM: 14.9, xpM: 38.4, goldM: 20.7, desc: '☠ Corruption IX — ×512 HP · ×15 damage · ×38 XP' },
+      pal: { skyTop: '#0c0a14', skyBot: '#201c2a', ground: '#322c3a', prop: '#16121e', accent: '#d0b090', ambient: 'stars', ambColor: '#d0c0a0' },
+      monsters: [
+        { name: 'Chorus Boulder', shape: 'golem',   hue: 35,  size: 1.3,  hp: 1.5,  dmg: 1.0,  xp: 1.25, gold: 1.1 },
+        { name: 'Iron Comet',     shape: 'crystal', hue: 20,  size: 1.05, hp: 1.05, dmg: 1.2,  xp: 1.1,  gold: 1.15 },
+        { name: 'Belt Shepherd',  shape: 'mech',    hue: 90,  size: 1.1,  hp: 1.15, dmg: 1.1,  xp: 1.15, gold: 1.1 },
+      ],
+    },
+    {
+      id: 'nebula', name: 'Nebula Gardens', level: 253, props: 'cosmos', sealed: 'apex',
+      flavor: 'Where stars are grown from seed. Please do not pick anything. Everything here picks back.',
+      gimmick: { hpM: 1024, mdmgM: 20.1, xpM: 57.7, goldM: 28.9, desc: '☠ Corruption X — ×1024 HP · ×20 damage · ×58 XP' },
+      pal: { skyTop: '#180c28', skyBot: '#40205a', ground: '#241430', prop: '#300f4a', accent: '#ff90d0', ambient: 'stars', ambColor: '#ffb0e0' },
+      monsters: [
+        { name: 'Protostar Tadpole', shape: 'star',  hue: 40,  size: 0.9,  hp: 0.9,  dmg: 1.2,  xp: 1.2,  gold: 1.05 },
+        { name: 'Nebular Grazer',    shape: 'squid', hue: 310, size: 1.15, hp: 1.25, dmg: 1.05, xp: 1.15, gold: 1.1 },
+        { name: 'Gas Bloom',         shape: 'wisp',  hue: 290, size: 1.0,  hp: 0.95, dmg: 1.15, xp: 1.1,  gold: 1.0 },
+      ],
+    },
+    {
+      id: 'deadstar', name: 'The Dead Star', level: 274, props: 'asteroid', sealed: 'apex',
+      flavor: 'It used to be noon here, forever. Now it is the memory of noon, armed.',
+      gimmick: { hpM: 2048, mdmgM: 27.1, xpM: 86.5, goldM: 40.5, desc: '☠ Corruption XI — ×2048 HP · ×27 damage · ×86 XP' },
+      pal: { skyTop: '#140808', skyBot: '#381210', ground: '#241010', prop: '#0f0606', accent: '#ff6040', ambient: 'embers', ambColor: '#ff7050' },
+      monsters: [
+        { name: 'Cinder of Heaven',  shape: 'star',     hue: 15,  size: 1.1,  hp: 1.1,  dmg: 1.2,  xp: 1.2,  gold: 1.1 },
+        { name: 'Gravity Widow',     shape: 'spider',   hue: 350, size: 1.15, hp: 1.15, dmg: 1.15, xp: 1.15, gold: 1.05 },
+        { name: 'Collapse Cultist',  shape: 'humanoid', hue: 5,   size: 1.0,  hp: 0.95, dmg: 1.25, xp: 1.1,  gold: 1.1 },
+      ],
+    },
+    {
+      id: 'static', name: 'The Edge of the Static', level: 296, props: 'cosmos', sealed: 'apex',
+      flavor: 'Past the last star, the universe is still buffering. Try not to look load-bearing.',
+      gimmick: { hpM: 4096, mdmgM: 36.6, xpM: 130, goldM: 56.7, desc: '☠ Corruption XII — ×4096 HP · ×37 damage · ×130 XP' },
+      pal: { skyTop: '#0a0a0a', skyBot: '#1e1e22', ground: '#141418', prop: '#2e2e36', accent: '#e0e0e8', ambient: 'void', ambColor: '#ffffff' },
+      monsters: [
+        { name: 'The Unrendered', shape: 'crystal', hue: 220, size: 1.1,  hp: 1.1,  dmg: 1.15, xp: 1.15, gold: 1.1 },
+        { name: 'Screensaver',    shape: 'eye',     hue: 180, size: 1.05, hp: 1.0,  dmg: 1.2,  xp: 1.2,  gold: 1.05 },
+        { name: 'The Last Pixel', shape: 'mech',    hue: 300, size: 1.0,  hp: 0.95, dmg: 1.25, xp: 1.25, gold: 1.15 },
+      ],
+    },
   ];
   const ZONE_BY_ID = {};
   for (const z of ZONES) ZONE_BY_ID[z.id] = z;
@@ -548,6 +626,24 @@ GQ.data = (() => {
     apex: { key: 'wholepoint', name: 'The Whole Point', slot: 'weapon',
       flavor: 'You climbed all this way. It was in your hand the entire time.',
       stats: [{ k: 'atkFlat', c: 10 }, { k: 'crit', r: [8, 11] }, { k: 'critDmg', r: [40, 60] }, { k: 'xp', r: [12, 16] }] },
+    scaffold: { key: 'countdown', name: 'Countdown Zero', slot: 'ring',
+      flavor: 'The moment before launch, wearable.',
+      stats: [{ k: 'haste', r: [12, 16] }, { k: 'crit', r: [7, 10] }, { k: 'gold', r: [14, 20] }] },
+    orbit: { key: 'firstflag', name: 'The First Flag', slot: 'offhand',
+      flavor: 'Planted somewhere nobody could argue about. They argued.',
+      stats: [{ k: 'atkPct', r: [14, 18] }, { k: 'xp', r: [12, 16] }, { k: 'gold', r: [12, 18] }] },
+    belt: { key: 'choirstone', name: 'Choirstone', slot: 'amulet',
+      flavor: 'Hums the one note. You hum it now too.',
+      stats: [{ k: 'critDmg', r: [40, 55] }, { k: 'hpPct', r: [12, 16] }, { k: 'xp', r: [10, 14] }] },
+    nebula: { key: 'sunseed', name: 'Seed of a Sun', slot: 'chest',
+      flavor: 'Plant at your own risk. Water with patience.',
+      stats: [{ k: 'hpFlat', c: 18 }, { k: 'hpPct', r: [12, 16] }, { k: 'regen', r: [1.8, 2.5] }] },
+    deadstar: { key: 'noonlight', name: 'Noonlight, Bottled', slot: 'weapon',
+      flavor: 'The last good hour of a dead star. Shake well.',
+      stats: [{ k: 'atkFlat', c: 11 }, { k: 'crit', r: [8, 11] }, { k: 'critDmg', r: [45, 65] }] },
+    static: { key: 'antenna', name: 'Antenna of the Signal', slot: 'helm',
+      flavor: 'You can hear it clearly now. It is a to-do list.',
+      stats: [{ k: 'atkPct', r: [14, 18] }, { k: 'crit', r: [7, 10] }, { k: 'loot', r: [12, 16] }, { k: 'xp', r: [12, 16] }] },
   };
 
   // challenge runs: ascend into a restriction, earn a permanent Relic
@@ -771,6 +867,24 @@ GQ.data = (() => {
     'Absence': 'Not nothing. Worse. Almost something.',
     'Night Gardener': 'Waters the dark. The dark is thriving.',
     'Unlit Beast': 'You hear the shadow. The shadow hears you first.',
+    'Countdown Sprite': 'Lives for the last ten seconds. Of anything.',
+    'Gantry Mimic': 'Pretends to be scaffolding. Excellent at it. Until.',
+    'Fuel Ghast': 'Highly flammable. Deeply offended by sparks.',
+    'Debris Halo': 'Every launch leaves a little something. It collects the somethings.',
+    'Orbital Watcher': 'Has seen everything you did from up here. Blinks slowly.',
+    'Vacuum Leech': 'Sucks. Technically. Astronomically.',
+    'Chorus Boulder': 'A rock that found its voice. The voice found a grudge.',
+    'Iron Comet': 'Punctual to the century. Furious about interruptions.',
+    'Belt Shepherd': 'Herds a billion rocks. Counts you as a stray.',
+    'Protostar Tadpole': 'Will be a sun someday. Currently a tantrum.',
+    'Nebular Grazer': 'Eats starlight. Produces awe and mild dread.',
+    'Gas Bloom': 'A flower the size of a moon, pollinated by radiation.',
+    'Cinder of Heaven': 'A coal from the fire that used to be the sky.',
+    'Gravity Widow': 'Her web is orbital mechanics. You are in it now.',
+    'Collapse Cultist': 'Worships the inevitable. Very patient congregation.',
+    'The Unrendered': 'Scheduled to exist. The schedule slipped.',
+    'Screensaver': 'Activates when the universe idles. You woke it.',
+    'The Last Pixel': 'Somebody has to be the edge. It volunteered.',
     'Echo of You': 'Made every choice you made, one second later. Resents it.',
     'Applause': 'Eight hands. You can guess what it does. You will hate it.',
     'Coronation Wight': 'Crowned seconds before the end. Counts it.',
@@ -805,6 +919,12 @@ GQ.data = (() => {
     clockwork: { name: 'The Horologist', shape: 'golem',    hue: 42,  size: 2.1, title: 'Still Winding the World. Wrong Direction.' },
     garden:    { name: 'Mother Thorn',   shape: 'spider',   hue: 330, size: 2.2, title: 'The Garden Grows Where She Smiles' },
     throne:    { name: 'The Last God',   shape: 'wisp',     hue: 268, size: 2.4, title: 'Was Promised Worship. Got You.' },
+    scaffold:  { name: 'Mission Control',      shape: 'mech',  hue: 200, size: 2.2, title: 'All Systems Are Going' },
+    orbit:     { name: 'The First Satellite',  shape: 'mech',  hue: 220, size: 2.1, title: 'Still Transmitting. Nobody Answers.' },
+    belt:      { name: 'The Choirmaster',      shape: 'golem', hue: 40,  size: 2.4, title: 'It Has Been Humming for Eons' },
+    nebula:    { name: 'Mother of Stars',      shape: 'star',  hue: 315, size: 2.3, title: 'Every Sun Is Her Favorite' },
+    deadstar:  { name: 'The Ember of Everything', shape: 'star', hue: 12, size: 2.4, title: 'It Remembers Being Noon' },
+    static:    { name: 'The Signal',           shape: 'eye',   hue: 185, size: 2.5, title: 'It Was Never Random' },
     stair:     { name: 'The Landlord',      shape: 'humanoid', hue: 255, size: 2.0, title: 'Rent Is Due, Ascending' },
     choir:     { name: 'The Conductor',     shape: 'humanoid', hue: 295, size: 2.0, title: 'Demands an Encore. Always.' },
     archive:   { name: 'The Head Librarian', shape: 'golem',   hue: 25,  size: 2.2, title: 'Everything Is Overdue' },
@@ -837,8 +957,8 @@ GQ.data = (() => {
 
   // permanent upgrades bought with Soul Embers
   const ASC_UPGRADES = [
-    { key: 'str',  name: 'Eternal Strength', icon: '⚔️', max: 25, cost: r => 4 + 3 * r,   desc: '+10% damage per rank' },
-    { key: 'vig',  name: 'Eternal Vigor',    icon: '🛡️', max: 25, cost: r => 4 + 3 * r,   desc: '+10% max HP per rank' },
+    { key: 'str',  name: 'Eternal Strength', icon: '⚔️', max: 999, cost: r => 4 + 3 * r,   desc: '+10% damage per rank' },
+    { key: 'vig',  name: 'Eternal Vigor',    icon: '🛡️', max: 999, cost: r => 4 + 3 * r,   desc: '+10% max HP per rank' },
     { key: 'auto', name: 'Muscle Memory',    icon: '🤖', max: 1,  cost: () => 15,         desc: 'Abilities cast themselves' },
     { key: 'head', name: 'Head Start',       icon: '🚀', max: 4,  cost: r => 10 + 15 * r, desc: 'Begin each life 5 levels higher' },
     { key: 'gold', name: 'Deep Pockets',     icon: '💰', max: 10, cost: r => 3 + 2 * r,   desc: '+25% gold per rank' },
@@ -983,6 +1103,14 @@ GQ.data = (() => {
       check: s => s.hero.level >= 150, reward: { shards: 400 } },
     { key: 'asc10',    name: 'Habitual',           desc: 'Ascend 10 times',
       check: s => (s.asc.count || 0) >= 10, reward: { shards: 300 } },
+    { key: 'firm1',    name: 'Moonwalker',         desc: 'Slay a monster in the Firmament',
+      check: s => ['scaffold', 'orbit', 'belt', 'nebula', 'deadstar', 'static'].some(z => (s.stats.killsByZone[z] || 0) > 0), reward: { shards: 150 } },
+    { key: 'signal',   name: 'You Heard It Too',   desc: 'Silence The Signal',
+      check: s => ((s.boss && s.boss.kills.static) || 0) >= 1, reward: { shards: 800 } },
+    { key: 'sector1',  name: 'Escape Velocity',    desc: 'Clear Deep Space Sector 1',
+      check: s => ((s.sector && s.sector.best) || 0) >= 1, reward: { shards: 200 } },
+    { key: 'sector10', name: 'Nowhere, Fast',      desc: 'Clear Deep Space Sector 10',
+      check: s => ((s.sector && s.sector.best) || 0) >= 10, reward: { shards: 500 } },
   ];
 
   const TIPS = [
@@ -1022,6 +1150,9 @@ GQ.data = (() => {
     'Tip: titles are earned, worn, and legally binding. Click your name.',
     'Tip: the Spire\'s Corruption doubles monster HP every floor. Gear will not save you. Ascension will.',
     'Tip: Spire bosses pay 10 Soul Embers each when you ascend. The Spire respects investors.',
+    'Tip: past the Apex, the grind goes to space. The grind did not pack for you.',
+    'Tip: Deep Space has no end. Each sector cleared pays embers. Forever is a business model.',
+    'Tip: Eternal Strength and Vigor no longer have a ceiling. Neither does anything else now.',
   ];
 
   return {

@@ -41,11 +41,45 @@ GQ.engine = (() => {
   }
 
   function depthsUnlocked() { return (S().boss.kills.rift || 0) > 0; }
-  // gates: the Beyond opens when the Rift's master falls; the Spire when the Last God does
+  function sectorsUnlocked() { return (S().boss.kills.static || 0) > 0; }
+  // gates: the Beyond opens at the Rift's master, the Spire at the Last God,
+  // the Firmament at The Grind Itself
   function zoneOpen(z) {
     if (!z.sealed) return true;
+    if (z.sealed === 'apex') return (S().boss.kills.apex || 0) > 0;
     if (z.sealed === 'throne') return (S().boss.kills.throne || 0) > 0;
     return depthsUnlocked();
+  }
+
+  // Deep Space: infinite generated sectors past the Edge of the Static
+  const SECTOR_FLAVORS = [
+    'Space, but deeper. The stars here have not been named. They are taking applications.',
+    'The dark between darknesses. Your torch is a rounding error.',
+    'Something out here is counting your kills too. Try to impress it.',
+    'No maps. No shore. No refunds.',
+    'The silence has texture now. It is grinding back.',
+  ];
+  const FIRMAMENT_IDS = ['scaffold', 'orbit', 'belt', 'nebula', 'deadstar', 'static'];
+
+  function sectorZone(n) {
+    const host = D.ZONE_BY_ID[FIRMAMENT_IDS[(n - 1) % FIRMAMENT_IDS.length]];
+    const B = D.BAL;
+    return {
+      id: 'sector',
+      name: `Deep Space · Sector ${n}`,
+      level: B.sectorBase + B.sectorStep * n,
+      flavor: SECTOR_FLAVORS[(n - 1) % SECTOR_FLAVORS.length],
+      props: host.props,
+      pal: host.pal,
+      monsters: host.monsters,
+      gimmick: {
+        hpM: B.sectorHpBase * Math.pow(B.sectorHpGrow, n),
+        mdmgM: B.sectorDmgBase * Math.pow(B.sectorDmgGrow, n),
+        xpM: B.sectorXpBase * Math.pow(B.sectorXpGrow, n),
+        goldM: B.sectorGoldBase * Math.pow(B.sectorGoldGrow, n),
+        desc: `☠ Deep Corruption — Sector ${n}`,
+      },
+    };
   }
 
   // anomalies: a temporary place borrowing its host's fauna, 3 levels up
@@ -82,6 +116,7 @@ GQ.engine = (() => {
 
   function currentZone() {
     if (S().zoneId === 'depth') return depthZone(S().depth.current);
+    if (S().zoneId === 'sector') return sectorZone(S().sector.current);
     if (S().zoneId === 'trial') return trialZone(combat.trial ? combat.trial.i : 0);
     if (S().zoneId === 'anomaly') return anomalyZone();
     return D.ZONE_BY_ID[S().zoneId] || D.ZONES[0];
@@ -406,6 +441,15 @@ GQ.engine = (() => {
       }
       ui().markDirty('zones');
     }
+    if (S().zoneId === 'sector' && S().sector.kills > 0) {
+      if (S().shop.insurance > 0) {
+        ui().log('Deep Space audits your progress. <b>Bureau Insurance</b> covers interstellar incidents. Kept.', 'sys');
+      } else {
+        S().sector.kills = 0;
+        ui().log('Deep Space keeps what it takes. Sector progress lost to the dark.', 'death');
+      }
+      ui().markDirty('zones');
+    }
     combat.streak = 0;
     S().hero.hp = 0;
     S().stats.deaths++;
@@ -471,6 +515,27 @@ GQ.engine = (() => {
       ui().markDirty('zones');
       if (S().anomaly.kills >= D.BAL.anomalyKills) {
         completeAnomaly();
+      }
+    }
+
+    // Deep Space: 40 kills clears a sector; each clear pays embers, forever
+    if (z.id === 'sector') {
+      S().sector.kills++;
+      if (S().sector.kills >= D.BAL.sectorKills) {
+        const n = S().sector.current;
+        const embers = 2 + Math.floor(n / 3);
+        S().asc.embers += embers;
+        S().asc.lifetime += embers;
+        const shards = Math.round(40 * (1 + n / 2));
+        S().hero.shards += shards;
+        S().stats.shardsEarned += shards;
+        if (n > S().sector.best) S().sector.best = n;
+        S().sector.current = n + 1;
+        S().sector.kills = 0;
+        ui().toast(`🚀 Sector ${n} cleared! (+${embers} 🔥, +${shards} shards)`, 'gold', 5);
+        ui().log(`<b>🚀 Sector ${n} cleared.</b> The next one is further, darker, and somehow ruder. +${embers} embers.`, 'level');
+        GQ.audio.conquer();
+        ui().markDirty('zones', 'records', 'res', 'zonehdr');
       }
     }
 
@@ -637,6 +702,14 @@ GQ.engine = (() => {
         ui().toast('🗼 THE ASCENDANT SPIRE APPEARS. Corruption doubles every floor. Bring lifetimes.', 'gold', 7);
         ui().log('<b>🗼 The Ascendant Spire tears upward through everything.</b> Six floors of stacking Corruption. Gear will not carry you up there — ascensions will. Spire bosses pay 10 embers each.', 'level');
       }
+      if (bz === 'apex') {
+        ui().toast('🚀 THE FIRMAMENT OPENS. The grind has left the planet.', 'gold', 7);
+        ui().log('<b>🚀 The sky cracks like an egg.</b> Six new heavens await above the Apex: scaffolds, orbits, nebulae, dead stars — and past the Static, Deep Space goes on forever. Literally. We checked twice.', 'level');
+      }
+      if (bz === 'static') {
+        ui().toast('🌌 DEEP SPACE UNLOCKED. Infinite sectors. Infinite embers. Infinite grind.', 'gold', 7);
+        ui().log('<b>🌌 The Signal falls silent, and behind it: everything else.</b> Deep Space sectors scale forever and pay embers per clear. The grind has no edge. It never did.', 'level');
+      }
       if (GQ.state.conqueredCount() >= Object.keys(D.BOSSES).length) {
         ui().completionModal();
       }
@@ -757,6 +830,9 @@ GQ.engine = (() => {
     if (id === 'depth') {
       if (!depthsUnlocked()) return false;
       z = depthZone(S().depth.current);
+    } else if (id === 'sector') {
+      if (!sectorsUnlocked()) return false;
+      z = sectorZone(S().sector.current);
     } else if (id === 'anomaly') {
       if (!S().anomaly) return false;
       z = anomalyZone();
@@ -1359,6 +1435,7 @@ GQ.engine = (() => {
 
   function rates(zoneId) {
     const z = zoneId === 'depth' ? depthZone(S().depth.current)
+      : zoneId === 'sector' ? sectorZone(S().sector.current)
       : zoneId === 'trial' ? trialZone(combat.trial ? combat.trial.i : 0)
       : zoneId === 'anomaly' ? anomalyZone()
       : D.ZONE_BY_ID[zoneId];
@@ -1507,9 +1584,12 @@ GQ.engine = (() => {
     if (D.BOSSES[z.id]) {
       S().boss.progress[z.id] = Math.min(D.BAL.bossKillsNeeded, (S().boss.progress[z.id] || 0) + flooredKills);
     }
-    // the Depths are active content: offline banks kills but never clears floors
+    // the Depths and Deep Space are active content: offline banks kills but never clears
     if (z.id === 'depth') {
       S().depth.kills = Math.min(D.BAL.depthKills - 1, S().depth.kills + flooredKills);
+    }
+    if (z.id === 'sector') {
+      S().sector.kills = Math.min(D.BAL.sectorKills - 1, S().sector.kills + flooredKills);
     }
     questEvent('kill', flooredKills, { zone: z.id });
     questEvent('gold', report.gold);
@@ -1526,6 +1606,7 @@ GQ.engine = (() => {
     combat, tick, setZone, rates, offline, addXp, spawnMonster,
     cast, abilities, summonBoss, questEvent, ensureQuests, checkAchievements,
     currentZone, eventMods, activeEvent, depthsUnlocked, depthZone,
+    sectorsUnlocked, sectorZone,
     warDrums, drumsPrice, stormBell, bellPrice,
     startTrial, endTrial, trialZone,
     anomalyZone, zoneOpen,

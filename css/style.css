@@ -534,6 +534,9 @@ select option{ background:#171d34; color:var(--text); }
 }
 
 /* ---------- the depths ---------- */
+.zcard.sector{ border-color:#1c3a5e; background:linear-gradient(180deg,#0c1626,#060c16); }
+.zcard.sector:hover{ border-color:#3a6aa8; }
+.zcard.sector.active{ border-color:#80c0ff88; box-shadow:0 0 16px #80c0ff22; }
 .zcard.depth{ border-color:#3b1a5e; background:linear-gradient(180deg,#1c1030,#120a1e); }
 .zcard.depth:hover{ border-color:#7a3ab8; }
 .zcard.depth.active{ border-color:#e26af088; box-shadow:0 0 16px #e26af022; }

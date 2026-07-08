@@ -63,6 +63,7 @@ GQ.state = (() => {
       questChain: 0,         // index into STARTER_QUESTS
       talents: {},           // tierIndex -> pickKey (reset on ascension)
       depth: { current: 1, best: 0, kills: 0 },
+      sector: { current: 1, best: 0, kills: 0 },   // Deep Space: the infinite ladder
       event: null,           // {key, zoneId, until} in stats.time seconds
       eventNext: 180,        // stats.time when the next event may fire
       anomaly: null,         // {key, host, until, kills}
@@ -293,6 +294,8 @@ GQ.state = (() => {
     S.event = null;
     S.challenge = challengeKey || null;
     S.challengeProg = { bosses: 0 };
+    S.sector.current = 1;
+    S.sector.kills = 0;    // best sector persists: the account remembers how far you flew
     S.stats.pity = 20;
     recalc();
     S.hero.hp = api.drv.hpMax;
@@ -355,6 +358,8 @@ GQ.state = (() => {
       s.quests = Array.isArray(s.quests) ? s.quests : [];
       s.talents = s.talents || {};
       s.depth = Object.assign(base.depth, s.depth || {});
+      s.sector = Object.assign(base.sector, s.sector || {});
+      if (s.zoneId === 'sector' && !((s.boss.kills || {}).static > 0)) s.zoneId = 'meadow';
       s.shop = Object.assign(base.shop, s.shop || {});
       s.trials = s.trials || {};
       s.pets = Object.assign(base.pets, s.pets || {});

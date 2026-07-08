@@ -522,6 +522,46 @@ GQ.scene = (() => {
         ctx.closePath(); ctx.fill();
         break;
       }
+      case 'space': { // launch gantries and antenna arrays
+        const h = (80 + pr.r1 * 60) * s;
+        ctx.fillRect(x - 4 * s, gy - h, 8 * s, h);
+        ctx.fillRect(x - 18 * s, gy - h * 0.75, 36 * s, 3 * s);
+        ctx.fillRect(x - 18 * s, gy - h * 0.45, 36 * s, 3 * s);
+        if (pr.r2 > 0.5) { // dish
+          ctx.beginPath();
+          ctx.arc(x, gy - h - 6 * s, 10 * s, Math.PI * 0.15, Math.PI * 0.85, true);
+          ctx.fill();
+        } else { // beacon mast
+          ctx.fillRect(x - 1.5, gy - h - 16 * s, 3, 16 * s);
+        }
+        break;
+      }
+      case 'asteroid': { // rocks that never agreed to land
+        const bob = Math.sin(t * 0.5 + pr.r1 * 9) * 7;
+        const yy = gy - (50 + pr.r2 * 90) * s + bob;
+        const r = (12 + pr.r1 * 16) * s;
+        ctx.beginPath();
+        ctx.moveTo(x - r, yy);
+        ctx.lineTo(x - r * 0.3, yy - r * 0.9);
+        ctx.lineTo(x + r * 0.7, yy - r * 0.6);
+        ctx.lineTo(x + r, yy + r * 0.3);
+        ctx.lineTo(x + r * 0.1, yy + r * 0.8);
+        ctx.closePath();
+        ctx.fill();
+        break;
+      }
+      case 'cosmos': { // nebula blooms
+        const yy = gy - (70 + pr.r2 * 110) * s;
+        const r = (26 + pr.r1 * 30) * s;
+        const ng = ctx.createRadialGradient(x, yy, 2, x, yy, r);
+        ng.addColorStop(0, hexA(z.pal.accent, 0.18));
+        ng.addColorStop(0.6, hexA(z.pal.prop, 0.35));
+        ng.addColorStop(1, hexA(z.pal.prop, 0));
+        ctx.fillStyle = ng;
+        ctx.beginPath(); ctx.arc(x, yy, r, 0, 7); ctx.fill();
+        ctx.fillStyle = z.pal.prop;
+        break;
+      }
       case 'rift': { // floating shard
         const bob = Math.sin(t * 0.7 + pr.r1 * 7) * 6;
         const yy = gy - 70 * s + bob;
@@ -588,6 +628,13 @@ GQ.scene = (() => {
           y = (a.y + t * a.sp * 0.8) % (H + 10);
           alpha = 0.3 + 0.3 * Math.sin(t * 2 + a.ph);
           break;
+        case 'stars': {
+          // fixed constellations, twinkling
+          const tw = Math.sin(t * 1.6 + a.ph * 5);
+          alpha = 0.25 + 0.6 * tw * tw;
+          sz = a.sz * 0.7;
+          break;
+        }
         default: // motes
           x = a.x + Math.sin(t * 0.4 + a.ph) * 18;
           y = (a.y + t * a.sp * 0.6) % (H + 10);
@@ -1180,6 +1227,156 @@ GQ.scene = (() => {
         tri3(c, -8, fy - 12, -6, fy - 22, -2, fy - 12);
         tri3(c, 8, fy - 12, 6, fy - 22, 2, fy - 12);
         eyes(c, -4, fy - 4, 3, hue);
+        break;
+      }
+      case 'eye': {
+        const fy = -52 + Math.sin(time * 2.2) * 5;
+        // lash tentacles
+        c.strokeStyle = dark;
+        c.lineWidth = 3.5;
+        c.lineCap = 'round';
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2 + time * 0.4;
+          const wig = Math.sin(time * 3 + i * 1.7) * 6;
+          c.beginPath();
+          c.moveTo(Math.cos(a) * 26, fy + Math.sin(a) * 26);
+          c.quadraticCurveTo(Math.cos(a) * 42 + wig, fy + Math.sin(a) * 42, Math.cos(a) * 50, fy + Math.sin(a) * 50 + wig);
+          c.stroke();
+        }
+        // sclera, iris, pupil
+        const g = c.createRadialGradient(-6, fy - 6, 3, 0, fy, 30);
+        g.addColorStop(0, '#f2f0ec');
+        g.addColorStop(1, lite);
+        c.fillStyle = g;
+        c.beginPath(); c.arc(0, fy, 28, 0, 7); c.fill();
+        c.fillStyle = `hsl(${(hue + 180) % 360}, 75%, 55%)`;
+        c.beginPath(); c.arc(-4, fy, 13, 0, 7); c.fill();
+        c.fillStyle = '#10131e';
+        c.beginPath(); c.arc(-4 + Math.sin(time * 1.3) * 2, fy, 6, 0, 7); c.fill();
+        c.fillStyle = hexA('#ffffff', 0.8);
+        c.beginPath(); c.arc(-9, fy - 6, 2.5, 0, 7); c.fill();
+        break;
+      }
+      case 'crystal': {
+        const fy = -48 + Math.sin(time * 1.8) * 5;
+        const rot = time * 0.5;
+        // core glow
+        const g = c.createRadialGradient(0, fy, 2, 0, fy, 40);
+        g.addColorStop(0, hexA(lite, 0.5));
+        g.addColorStop(1, hexA(lite, 0));
+        c.fillStyle = g;
+        c.beginPath(); c.arc(0, fy, 40, 0, 7); c.fill();
+        // shards orbiting slowly
+        for (let i = 0; i < 4; i++) {
+          const a = rot + i * (Math.PI / 2);
+          const cx = Math.cos(a) * (i === 0 ? 0 : 16);
+          const cy = fy + Math.sin(a) * (i === 0 ? 0 : 12);
+          const s = i === 0 ? 1.25 : 0.7;
+          c.save();
+          c.translate(cx, cy);
+          c.rotate(a * 0.7);
+          const sg = c.createLinearGradient(0, -26 * s, 0, 26 * s);
+          sg.addColorStop(0, lite); sg.addColorStop(1, dark);
+          c.fillStyle = sg;
+          c.beginPath();
+          c.moveTo(0, -26 * s); c.lineTo(11 * s, 0); c.lineTo(0, 26 * s); c.lineTo(-11 * s, 0);
+          c.closePath(); c.fill();
+          c.strokeStyle = hexA('#ffffff', 0.35);
+          c.lineWidth = 1;
+          c.stroke();
+          c.restore();
+        }
+        break;
+      }
+      case 'squid': {
+        const fy = -56 + Math.sin(time * 2) * 5;
+        // tentacles trailing below
+        c.strokeStyle = body;
+        c.lineWidth = 5;
+        c.lineCap = 'round';
+        for (let i = 0; i < 5; i++) {
+          const x0 = -18 + i * 9;
+          c.beginPath();
+          c.moveTo(x0, fy + 16);
+          c.quadraticCurveTo(
+            x0 + Math.sin(time * 2.6 + i) * 9, fy + 38,
+            x0 + Math.sin(time * 2.6 + i + 0.8) * 14, fy + 54);
+          c.stroke();
+        }
+        // dome
+        const g = c.createRadialGradient(-8, fy - 12, 4, 0, fy, 32);
+        g.addColorStop(0, lite);
+        g.addColorStop(0.7, body);
+        g.addColorStop(1, hexA(body, 0.6));
+        c.fillStyle = g;
+        c.beginPath();
+        c.arc(0, fy, 26, Math.PI, 0);
+        c.quadraticCurveTo(26, fy + 18, 20, fy + 18);
+        c.lineTo(-20, fy + 18);
+        c.quadraticCurveTo(-26, fy + 18, -26, fy);
+        c.closePath(); c.fill();
+        c.fillStyle = hexA('#ffffff', 0.25);
+        c.beginPath(); c.ellipse(-10, fy - 12, 7, 4, -0.5, 0, 7); c.fill();
+        eyes(c, -10, fy + 4, 3.6, hue);
+        break;
+      }
+      case 'mech': {
+        const fy = -44 + Math.sin(time * 2.4) * 4;
+        // thruster glow
+        const tg = c.createRadialGradient(0, fy + 30, 2, 0, fy + 30, 22);
+        tg.addColorStop(0, hexA(lite, 0.6));
+        tg.addColorStop(1, hexA(lite, 0));
+        c.fillStyle = tg;
+        c.beginPath(); c.arc(0, fy + 30, 22, 0, 7); c.fill();
+        // body
+        const g = c.createLinearGradient(0, fy - 26, 0, fy + 26);
+        g.addColorStop(0, lite); g.addColorStop(1, dark);
+        c.fillStyle = g;
+        roundRectOn(c, -22, fy - 24, 44, 48, 8); c.fill();
+        // side fins
+        c.fillStyle = dark;
+        tri3(c, -22, fy - 8, -38, fy + 6, -22, fy + 14);
+        tri3(c, 22, fy - 8, 38, fy + 6, 22, fy + 14);
+        // visor
+        c.fillStyle = `hsl(${(hue + 180) % 360}, 90%, 65%)`;
+        c.globalAlpha = 0.75 + 0.25 * Math.sin(time * 5);
+        roundRectOn(c, -14, fy - 12, 28, 8, 4); c.fill();
+        c.globalAlpha = 1;
+        // antenna with blinking light
+        c.strokeStyle = dark; c.lineWidth = 2.5;
+        c.beginPath(); c.moveTo(0, fy - 24); c.lineTo(0, fy - 42); c.stroke();
+        c.fillStyle = Math.sin(time * 6) > 0 ? '#ff5050' : dark;
+        c.beginPath(); c.arc(0, fy - 45, 3.2, 0, 7); c.fill();
+        // rivets
+        c.fillStyle = hexA('#ffffff', 0.25);
+        c.beginPath(); c.arc(-16, fy + 14, 2, 0, 7); c.fill();
+        c.beginPath(); c.arc(16, fy + 14, 2, 0, 7); c.fill();
+        break;
+      }
+      case 'star': {
+        const fy = -50;
+        const pulse = 1 + 0.08 * Math.sin(time * 4);
+        // flare spikes, rotating
+        c.save();
+        c.translate(0, fy);
+        c.rotate(time * 0.35);
+        c.fillStyle = hexA(lite, 0.65);
+        for (let i = 0; i < 8; i++) {
+          c.rotate(Math.PI / 4);
+          tri3(c, -6, -20 * pulse, 0, -42 * pulse, 6, -20 * pulse);
+        }
+        c.restore();
+        // radiant core
+        const g = c.createRadialGradient(0, fy, 2, 0, fy, 30 * pulse);
+        g.addColorStop(0, '#fff8e8');
+        g.addColorStop(0.45, lite);
+        g.addColorStop(1, hexA(body, 0.15));
+        c.fillStyle = g;
+        c.beginPath(); c.arc(0, fy, 30 * pulse, 0, 7); c.fill();
+        // a small, judgmental face
+        c.fillStyle = '#3a2a10';
+        c.beginPath(); c.arc(-9, fy - 3, 2.4, 0, 7); c.fill();
+        c.beginPath(); c.arc(1, fy - 3, 2.4, 0, 7); c.fill();
         break;
       }
     }

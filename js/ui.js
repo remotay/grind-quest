@@ -408,6 +408,41 @@ GQ.ui = (() => {
       GQ.state.save();
     });
     el['zone-list'].appendChild(dcard);
+
+    // Deep Space: the infinite ladder, hidden until the Signal falls
+    const scard = document.createElement('div');
+    scard.className = 'zcard sector hidden';
+    scard.dataset.zone = 'sector';
+    scard.addEventListener('click', () => {
+      GQ.engine.setZone('sector');
+      GQ.state.save();
+    });
+    el['zone-list'].appendChild(scard);
+  }
+
+  function renderSectorCard(card) {
+    const unlocked = GQ.engine.sectorsUnlocked();
+    card.classList.toggle('hidden', !unlocked);
+    if (!unlocked) return;
+    const sz = GQ.engine.sectorZone(S().sector.current);
+    const active = S().zoneId === 'sector';
+    card.classList.toggle('active', active);
+    const n = S().sector.current;
+    card.innerHTML = `
+      <div class="zc-top">
+        <span class="zc-lv">Lv ${sz.level}</span>
+        <span class="zc-name">🌌 ${sz.name}</span>
+        ${active ? '<span class="chip hunting">Hunting</span>' : ''}
+      </div>
+      <div class="zc-flavor">${sz.flavor}</div>
+      <div class="zc-rec"></div>
+      <div class="zc-rates">
+        <span class="rxp">XP/s <b>—</b></span>
+        <span class="rgold">Gold/s <b>—</b></span>
+        <span class="rilv">Drops <b>iLv ${sz.level - 1}–${sz.level + 2}</b></span>
+      </div>
+      <div class="zc-danger"></div>
+      <div class="zc-depth-prog">Sector progress <b>${S().sector.kills} / ${D.BAL.sectorKills}</b> · best sector <b style="color:var(--gold)">${S().sector.best || '—'}</b> · clears pay <b style="color:#ff9a5a">${2 + Math.floor(n / 3)} 🔥</b></div>`;
   }
 
   function renderAnomalyCard(card) {
@@ -479,19 +514,22 @@ GQ.ui = (() => {
   function renderZones() {
     for (const card of el['zone-list'].children) {
       if (card.dataset.zone === 'depth') { renderDepthCard(card); continue; }
+      if (card.dataset.zone === 'sector') { renderSectorCard(card); continue; }
       if (card.dataset.zone === 'pg') { renderPGCard(card); continue; }
       if (card.dataset.zone === 'anomaly') { renderAnomalyCard(card); continue; }
       const z = D.ZONE_BY_ID[card.dataset.zone];
       if (z.sealed && !GQ.engine.zoneOpen(z)) {
         card.classList.add('sealedcard');
         card.classList.remove('active', 'side');
-        const gateText = z.sealed === 'throne'
+        const gateText = z.sealed === 'apex'
+          ? 'The Firmament waits above the world. The Grind Itself is sitting on the launch key.'
+          : z.sealed === 'throne'
           ? 'The Ascendant Spire ignores you while a god still holds the Throne.'
           : 'Beyond the Rift. The seal holds while the Unraveled King still stands.';
         card.innerHTML = `
           <div class="zc-top">
             <span class="zc-lv">Lv ${z.level}</span>
-            <span class="zc-name">${z.sealed === 'throne' ? '🗼 ' : ''}${z.name}</span>
+            <span class="zc-name">${z.sealed === 'apex' ? '🚀 ' : z.sealed === 'throne' ? '🗼 ' : ''}${z.name}</span>
             <span class="chip trivial">🔒 Sealed</span>
           </div>
           <div class="zc-flavor">${gateText}</div>
@@ -556,8 +594,11 @@ GQ.ui = (() => {
       if (card.dataset.zone === 'anomaly') { renderAnomalyCard(card); continue; }
       if (card.classList.contains('sealedcard')) continue;
       const isDepth = card.dataset.zone === 'depth';
-      if (isDepth && card.classList.contains('hidden')) continue;
-      const z = isDepth ? GQ.engine.depthZone(S().depth.current) : D.ZONE_BY_ID[card.dataset.zone];
+      const isSector = card.dataset.zone === 'sector';
+      if ((isDepth || isSector) && card.classList.contains('hidden')) continue;
+      const z = isDepth ? GQ.engine.depthZone(S().depth.current)
+        : isSector ? GQ.engine.sectorZone(S().sector.current)
+        : D.ZONE_BY_ID[card.dataset.zone];
       const rxp = card.querySelector('.rxp b');
       if (!rxp) continue;
       const r = GQ.engine.rates(card.dataset.zone);
@@ -1208,7 +1249,7 @@ GQ.ui = (() => {
       return `<div class="asc-up">
         <div class="asc-ic">${u.icon}</div>
         <div class="asc-body">
-          <div class="asc-name">${u.name} <span class="asc-rank">${r}/${u.max}</span></div>
+          <div class="asc-name">${u.name} <span class="asc-rank">${r}/${u.max >= 999 ? '∞' : u.max}</span></div>
           <div class="asc-desc">${u.desc}</div>
         </div>
         <button class="btn small ${afford ? 'gold' : ''}" data-up="${u.key}" ${afford ? '' : 'disabled'}>${maxed ? 'MAX' : cost + ' 🔥'}</button>
@@ -1324,6 +1365,7 @@ GQ.ui = (() => {
       <div class="stat-row"><span class="sname">Companions</span><span class="sval">${Object.keys(S().pets.owned).length} / ${Object.keys(D.COMPANIONS).length}</span></div>
       <div class="stat-row"><span class="sname">Ascensions</span><span class="sval" style="color:#ff9a5a">${S().asc.count}</span></div>
       ${S().depth.best > 0 ? `<div class="stat-row"><span class="sname">Deepest floor</span><span class="sval" style="color:var(--r5)">Depth ${S().depth.best}</span></div>` : ''}
+      ${S().sector.best > 0 ? `<div class="stat-row"><span class="sname">Farthest sector</span><span class="sval" style="color:#80c0ff">Sector ${S().sector.best}</span></div>` : ''}
       ${zoneRows ? '<h4>Kills by zone</h4>' + zoneRows : ''}
       <h4>Bestiary (${Object.values(st.killsBySpecies || {}).filter(n => n >= D.BAL.bestiaryTiers[0]).length}/${Object.keys(D.LORE).length} studied)</h4>
       ${D.ZONES.map(z => z.monsters.map(sp => {
