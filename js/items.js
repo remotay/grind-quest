@@ -190,21 +190,19 @@ GQ.items = (() => {
     return sv;
   }
 
-  // salvage the whole bag; uniques and set pieces are spared
+  // salvage the entire bag — everything, no exceptions (equipped gear is untouched)
   function salvageAll() {
     const inv = S().hero.inventory;
-    let gold = 0, shards = 0, count = 0, kept = 0;
-    for (let i = inv.length - 1; i >= 0; i--) {
-      const it = inv[i];
-      if (it.rar >= 6 || it.set) { kept++; continue; }
+    let gold = 0, shards = 0, count = 0;
+    for (const it of inv) {
       const sv = salvageValue(it);
-      inv.splice(i, 1);
       grantSalvage(sv);
       gold += sv.gold; shards += sv.shards; count++;
     }
+    inv.length = 0;
     if (count && GQ.engine) GQ.engine.questEvent('salvage', count);
     dirty('inv', 'res');
-    return { gold, shards, count, kept };
+    return { gold, shards, count, kept: 0 };
   }
 
   // salvage everything at or below maxRar; returns totals

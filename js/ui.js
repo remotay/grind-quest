@@ -91,14 +91,16 @@ GQ.ui = (() => {
     $('btn-sort').addEventListener('click', () => { GQ.items.sortInv(); });
     $('btn-salvage-all').addEventListener('click', () => {
       const inv = S().hero.inventory;
-      const eligible = inv.filter(i => i.rar < 6 && !i.set).length;
-      if (!eligible) { log('Nothing to salvage. Your bag is all keepers (or empty).', 'sys'); return; }
-      const protectedN = inv.length - eligible;
+      if (!inv.length) { log('Nothing to salvage. Your bag is empty.', 'sys'); return; }
+      const special = inv.filter(i => i.rar >= 5 || i.set).length;
+      const warn = special
+        ? ` <b style="color:var(--deadly)">This includes ${special} mythic/unique/set item${special > 1 ? 's' : ''} — they will be destroyed.</b>`
+        : '';
       confirmModal(
-        `Salvage <b>${eligible}</b> item${eligible > 1 ? 's' : ''}?${protectedN ? ` (${protectedN} unique/set piece${protectedN > 1 ? 's' : ''} will be kept.)` : ''}`,
+        `Salvage your <b>entire bag</b> of ${inv.length} item${inv.length > 1 ? 's' : ''}?${warn} Equipped gear is not touched.`,
         () => {
           const r = GQ.items.salvageAll();
-          log(`<b>Salvaged the bag:</b> ${r.count} items → <b style="color:var(--gold)">${U.fmt(r.gold)} gold</b> and <b style="color:#bda1ff">${r.shards} shards</b>${r.kept ? ` (${r.kept} kept)` : ''}.`, 'sys');
+          log(`<b>Salvaged the whole bag:</b> ${r.count} items → <b style="color:var(--gold)">${U.fmt(r.gold)} gold</b> and <b style="color:#bda1ff">${r.shards} shards</b>.`, 'sys');
           GQ.audio.coin();
         });
     });
